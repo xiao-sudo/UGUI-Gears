@@ -2,11 +2,36 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Pool;
+using UnityEngine.UI;
 
 namespace UIExt.Base
 {
+    [RequireComponent(typeof(Image))]
     public class UIEventPassThrough : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler
     {
+        public enum PassThroughType
+        {
+            /// <summary>
+            /// Pass in target's rect
+            /// </summary>
+            PassAtTargetRect,
+
+            /// <summary>
+            /// Pass outside target's rect
+            /// </summary>
+            PassExcludeTargetRect,
+
+            /// <summary>
+            /// Pass always
+            /// </summary>
+            PassAlways,
+
+            /// <summary>
+            /// Pass Never
+            /// </summary>
+            PassNever
+        }
+
         private readonly struct EventExecuteTarget
         {
             private readonly bool m_Executed;
@@ -25,6 +50,14 @@ namespace UIExt.Base
         [SerializeField]
         private GameObject m_PassThroughTarget;
 
+        [SerializeField]
+        private PassThroughType m_PassThroughType = PassThroughType.PassAtTargetRect;
+
+        [SerializeField]
+        private Color m_MaskImageColor = new(0, 0, 0, 0.66f);
+
+        private Image m_MaskImage;
+        private RectTransform m_PassThroughTargetRect;
         private Action<GameObject> m_PassThroughClickCallback;
 
         private bool IsSpecifiedTarget => null != m_PassThroughTarget;
@@ -32,13 +65,23 @@ namespace UIExt.Base
         public GameObject PassThroughTarget
         {
             get => m_PassThroughTarget;
-            set => m_PassThroughTarget = value;
+            set
+            {
+                m_PassThroughTarget = value;
+                m_PassThroughTargetRect = m_PassThroughTarget.GetComponent<RectTransform>();
+            }
         }
 
         public Action<GameObject> PassThroughClickCallback
         {
             get => m_PassThroughClickCallback;
             set => m_PassThroughClickCallback = value;
+        }
+
+        private void Awake()
+        {
+            m_MaskImage = GetComponent<Image>();
+            m_MaskImage.color = m_MaskImageColor;
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -65,6 +108,9 @@ namespace UIExt.Base
             if (!IsSpecifiedTarget)
                 return new EventExecuteTarget(false, null);
 
+            if (!CanEventPassThrough(eventData))
+                return new EventExecuteTarget(false, null);
+
             var results = ListPool<RaycastResult>.Get();
 
             EventSystem.current.RaycastAll(eventData, results);
@@ -88,6 +134,28 @@ namespace UIExt.Base
             ListPool<RaycastResult>.Release(results);
 
             return new EventExecuteTarget(executed, executeGo);
+        }
+
+        private bool CanEventPassThrough(PointerEventData eventData)
+        {
+            switch (m_PassThroughType)
+            {
+                case PassThroughType.PassAtTargetRect:
+                    return RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTargetRect,
+                        eventData.position, eventData.pressEventCamera);
+
+                case PassThroughType.PassExcludeTargetRect:
+                    return !RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTargetRect,
+                        eventData.position, eventData.pressEventCamera);
+
+                case PassThroughType.PassAlways:
+                    return true;
+
+                case PassThroughType.PassNever:
+                    return false;
+            }
+
+            return false;
         }
 
         private bool ExecuteOnlyOnSpecifiedTarget<T>(GameObject go, PointerEventData eventData,
