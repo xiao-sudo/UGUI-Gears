@@ -1,11 +1,10 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace UIExt.Base
 {
     [RequireComponent(typeof(UIEventPassThrough))]
-    public class UIEventMask : Image
+    public class UIEventMask : MonoBehaviour
     {
         public enum MaskType
         {
@@ -13,34 +12,12 @@ namespace UIExt.Base
             Circle
         }
 
-        public enum PassThroughType
-        {
-            /// <summary>
-            /// Pass in target's rect
-            /// </summary>
-            PassAtTargetRect,
-
-            /// <summary>
-            /// Pass outside target's rect
-            /// </summary>
-            PassExcludeTargetRect,
-
-            /// <summary>
-            /// Pass always
-            /// </summary>
-            PassAlways,
-
-            /// <summary>
-            /// Pass Never
-            /// </summary>
-            PassNever
-        }
-
         [SerializeField]
         private UIEventPassThrough m_EventPassThrough;
 
         [SerializeField]
-        private PassThroughType m_PassThroughType = PassThroughType.PassAtTargetRect;
+        private UIEventPassThrough.PassThroughType m_PassThroughType =
+            UIEventPassThrough.PassThroughType.PassAtTargetRect;
 
         [SerializeField]
         private MaskType m_MaskType = MaskType.Rect;
@@ -48,10 +25,14 @@ namespace UIExt.Base
         private GameObject m_MaskTarget;
         private RectTransform m_MaskTargetTransform;
 
-        public PassThroughType PassThroughStyle
+        public UIEventPassThrough.PassThroughType PassThroughStyle
         {
             get => m_PassThroughType;
-            set => m_PassThroughType = value;
+            set
+            {
+                m_PassThroughType = value;
+                EventPassThrough.PassThroughStyle = value;
+            }
         }
 
         public MaskType MaskStyle
@@ -93,42 +74,13 @@ namespace UIExt.Base
             EventPassThrough.PassThroughTarget = m_MaskTarget;
         }
 
+        private void Awake()
+        {
+            EventPassThrough.PassThroughStyle = PassThroughStyle;
+        }
+
         public void SetMask(MaskType maskType)
         {
-        }
-
-        public override bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
-        {
-            switch (m_PassThroughType)
-            {
-                case PassThroughType.PassAtTargetRect:
-                    var r = RectTransformUtility.RectangleContainsScreenPoint(m_MaskTargetTransform, screenPoint,
-                        eventCamera);
-
-                    return !r;
-
-                case PassThroughType.PassExcludeTargetRect:
-                    return RectTransformUtility.RectangleContainsScreenPoint(m_MaskTargetTransform, screenPoint,
-                        eventCamera);
-
-                case PassThroughType.PassAlways:
-                    return false;
-
-                case PassThroughType.PassNever:
-                    return true;
-
-                default:
-                    return true;
-            }
-        }
-
-        public Rect HollowTargetRectOnScreenSpace
-        {
-            get
-            {
-                var rect = Utility.UIRect.GetRectInScreenSpace(m_MaskTargetTransform, canvas.GetComponent<Camera>());
-                return rect;
-            }
         }
 
         public RectTransform MaskTargetRectTransform => m_MaskTargetTransform;

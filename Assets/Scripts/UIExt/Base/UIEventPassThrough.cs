@@ -56,6 +56,7 @@ namespace UIExt.Base
         [SerializeField]
         private Color m_MaskImageColor = new(0, 0, 0, 0.66f);
 
+        private GameObject m_CachedGo;
         private Image m_MaskImage;
         private RectTransform m_PassThroughTargetRect;
         private Action<GameObject> m_PassThroughClickCallback;
@@ -72,6 +73,12 @@ namespace UIExt.Base
             }
         }
 
+        public PassThroughType PassThroughStyle
+        {
+            get => m_PassThroughType;
+            set => m_PassThroughType = value;
+        }
+
         public Action<GameObject> PassThroughClickCallback
         {
             get => m_PassThroughClickCallback;
@@ -80,6 +87,8 @@ namespace UIExt.Base
 
         private void Awake()
         {
+            m_CachedGo = gameObject;
+
             m_MaskImage = GetComponent<Image>();
             m_MaskImage.color = m_MaskImageColor;
         }
@@ -122,7 +131,7 @@ namespace UIExt.Base
             {
                 var go = result.gameObject;
 
-                executed = ExecuteOnlyOnSpecifiedTarget(go, eventData, handler);
+                executed = ExecuteExcludeSelf(go, eventData, handler);
 
                 if (executed)
                 {
@@ -158,10 +167,10 @@ namespace UIExt.Base
             return false;
         }
 
-        private bool ExecuteOnlyOnSpecifiedTarget<T>(GameObject go, PointerEventData eventData,
+        private bool ExecuteExcludeSelf<T>(GameObject go, PointerEventData eventData,
             ExecuteEvents.EventFunction<T> handler) where T : IEventSystemHandler
         {
-            if (go == m_PassThroughTarget)
+            if (go != m_CachedGo)
                 return ExecuteEvents.Execute(go, eventData, handler);
 
             return false;
