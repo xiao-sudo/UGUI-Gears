@@ -13,20 +13,65 @@ namespace UIExt.Utility
 
         private static readonly Vector3[] CACHE_CORNERS = new Vector3[CORNER_COUNT];
 
+
+        private static Vector2 GetCanvasRectSize(Canvas rootCanvas)
+        {
+            var pixelSize = rootCanvas.pixelRect.size;
+            return pixelSize;
+        }
+
+        private static Vector2 GetCorrectScreenSize()
+        {
+            if (Display.main != null)
+            {
+                return new Vector2(Display.main.systemWidth, Display.main.systemHeight);
+            }
+
+            var resolution = Screen.currentResolution;
+            if (resolution.width > 0 && resolution.height > 0)
+            {
+                return new Vector2(resolution.width, resolution.height);
+            }
+
+            return new Vector2(Screen.width, Screen.height);
+        }
+
+        private static Vector2 GetAutoScreenSize(Canvas rootCanvas)
+        {
+            var uiCamera = rootCanvas.worldCamera;
+
+            switch (rootCanvas.renderMode)
+            {
+                case RenderMode.ScreenSpaceOverlay:
+                    return GetCanvasRectSize(rootCanvas);
+
+                case RenderMode.ScreenSpaceCamera:
+                case RenderMode.WorldSpace:
+                    if (uiCamera != null)
+                    {
+                        return new Vector2(uiCamera.pixelWidth, uiCamera.pixelHeight);
+                    }
+
+                    return GetCorrectScreenSize();
+
+                default:
+                    return GetCorrectScreenSize();
+            }
+        }
+
+        /// <summary>
+        /// Get RectTransform's Rect in Screen Space, Origin (0, 0) is the left bottom corner of the screen
+        /// </summary>
+        /// <param name="target">target transform</param>
+        /// <param name="uiCamera">current ui camera</param>
+        /// <returns>rect in Screen Space</returns>
         public static Rect GetRectInScreenSpace(RectTransform target, Camera uiCamera = null)
         {
             target.GetWorldCorners(CACHE_CORNERS);
 
-            var lbPosition = CACHE_CORNERS[LEFT_BOTTOM_CORNER_INDEX];
-            var ltPosition = CACHE_CORNERS[LEFT_TOP_CORNER_INDEX];
-            var rtPosition = CACHE_CORNERS[RIGHT_TOP_CORNER_INDEX];
-
-            if (null != uiCamera)
-            {
-                lbPosition = uiCamera.WorldToScreenPoint(lbPosition);
-                ltPosition = uiCamera.WorldToScreenPoint(ltPosition);
-                rtPosition = uiCamera.WorldToScreenPoint(rtPosition);
-            }
+            var lbPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[LEFT_BOTTOM_CORNER_INDEX]);
+            var ltPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[LEFT_TOP_CORNER_INDEX]);
+            var rtPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[RIGHT_TOP_CORNER_INDEX]);
 
             var xMin = lbPosition.x;
             var yMin = lbPosition.y;
@@ -34,6 +79,25 @@ namespace UIExt.Utility
             var height = Vector3.Distance(ltPosition, lbPosition);
 
             return new Rect(xMin, yMin, width, height);
+        }
+
+        /// <summary>
+        /// Get RectTransform's Rect in Shader Screen Space, Origin (0, 0) is the screen center
+        /// This method uses camera's pixel dimensions to ensure consistency
+        /// </summary>
+        /// <param name="target">target transform</param>
+        /// <param name="rootCanvas"></param>
+        /// <returns>rect in Shader Screen Space</returns>
+        public static Rect GetRectInShaderScreenSpace(RectTransform target, Canvas rootCanvas)
+        {
+            var uiCamera = rootCanvas.worldCamera;
+            var rect = GetRectInScreenSpace(target, uiCamera);
+            var size = GetAutoScreenSize(rootCanvas);
+
+            var shaderMinX = rect.xMin - size.x * 0.5f;
+            var shaderMinY = rect.yMin - size.y * 0.5f;
+
+            return new Rect(shaderMinX, shaderMinY, rect.size.x, rect.size.y);
         }
 
         public static bool SetTargetRectBySource(RectTransform target, RectTransform source)
