@@ -1,5 +1,7 @@
 ﻿using System;
+using UIExt.Utility;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace UIExt.Base
 {
@@ -8,6 +10,7 @@ namespace UIExt.Base
     {
         public enum MaskType
         {
+            None,
             Rect,
             Circle
         }
@@ -20,10 +23,16 @@ namespace UIExt.Base
             UIEventPassThrough.PassThroughType.PassAtTargetRect;
 
         [SerializeField]
-        private MaskType m_MaskType = MaskType.Rect;
+        private Material m_RectMaskMaterial;
+
+        private MaskType m_MaskType = MaskType.None;
+
+        private Canvas m_Canvas;
 
         private GameObject m_MaskTarget;
         private RectTransform m_MaskTargetTransform;
+        private Image m_MaskImage;
+        private Material m_CurrentMaskMaterial;
 
         public UIEventPassThrough.PassThroughType PassThroughStyle
         {
@@ -60,7 +69,7 @@ namespace UIExt.Base
             }
         }
 
-        public void SetMaskTarget(GameObject target)
+        public void SetMaskTarget(GameObject target, MaskType maskType = MaskType.Rect)
         {
             if (null == target)
             {
@@ -68,10 +77,19 @@ namespace UIExt.Base
                 return;
             }
 
+            if (m_MaskTarget == target)
+                return;
+
             m_MaskTarget = target;
             m_MaskTargetTransform = m_MaskTarget.GetComponent<RectTransform>();
 
             EventPassThrough.PassThroughTarget = m_MaskTarget;
+
+            if (m_MaskType != maskType)
+                SetMaskMaterial(maskType);
+
+            m_MaskType = maskType;
+            UpdateMaskMaterial();
         }
 
         private void Awake()
@@ -79,10 +97,72 @@ namespace UIExt.Base
             EventPassThrough.PassThroughStyle = PassThroughStyle;
         }
 
-        public void SetMask(MaskType maskType)
+        public RectTransform MaskTargetRectTransform => m_MaskTargetTransform;
+
+        private Image MaskImage
         {
+            get
+            {
+                if (null == m_MaskImage)
+                    m_MaskImage = GetComponent<Image>();
+
+                return m_MaskImage;
+            }
         }
 
-        public RectTransform MaskTargetRectTransform => m_MaskTargetTransform;
+        private Canvas RootCanvas
+        {
+            get
+            {
+                if (null == m_Canvas)
+                {
+                    m_Canvas = GetComponentInParent<Canvas>();
+                }
+
+                return m_Canvas.rootCanvas;
+            }
+        }
+
+        private void SetMaskMaterial(MaskType maskType)
+        {
+            m_CurrentMaskMaterial = GetMaskMaterial(maskType);
+            MaskImage.material = m_CurrentMaskMaterial;
+        }
+
+        private Material GetMaskMaterial(MaskType maskType)
+        {
+            switch (maskType)
+            {
+                case MaskType.Rect:
+                    return m_RectMaskMaterial;
+
+                default:
+                    return m_RectMaskMaterial;
+            }
+        }
+
+        private void UpdateMaskMaterial()
+        {
+            switch (m_MaskType)
+            {
+                case MaskType.Rect:
+                    UpdateRectMaskMaterial();
+                    break;
+
+                default:
+                    UpdateRectMaskMaterial();
+                    break;
+            }
+        }
+
+        private static int RECT_ID = Shader.PropertyToID("_Rect");
+
+        private void UpdateRectMaskMaterial()
+        {
+            var rect = UIRect.GetRectInShaderScreenSpace(m_MaskTargetTransform, RootCanvas);
+            var center = rect.center;
+            var size = rect.size;
+            m_CurrentMaskMaterial.SetVector(RECT_ID, new Vector4(center.x, center.y, size.x, size.y));
+        }
     }
 }
