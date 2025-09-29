@@ -82,25 +82,22 @@ namespace UIExt.Utility
         }
 
         /// <summary>
-        /// Get RectTransform's Normalized Rect in Screen Space ((0, 0) is the screen center in shader)
+        /// Get RectTransform's Normalized Rect in Screen Space ((0, 0) is the left bottom)
         /// </summary>
         /// <param name="target">target transform</param>
         /// <param name="rootCanvas"></param>
         /// <returns>rect in Shader Screen Space</returns>
-        public static Rect GetNormalizedRectInScreenSpaceWithCenterAsOrigin(RectTransform target, Canvas rootCanvas)
+        public static Rect GetNormalizedRectInScreenSpace(RectTransform target, Canvas rootCanvas)
         {
             var uiCamera = rootCanvas.worldCamera;
             var rectInPx = GetRectInScreenSpace(target, uiCamera);
             var screenSizeInPx = GetAutoScreenSize(rootCanvas);
 
-            var shaderMinX = rectInPx.xMin - screenSizeInPx.x * 0.5f;
-            var shaderMinY = rectInPx.yMin - screenSizeInPx.y * 0.5f;
-
             var invScreenWidth = 1 / screenSizeInPx.x;
             var invScreenHeight = 1 / screenSizeInPx.y;
 
-            var normalizedMinX = shaderMinX * invScreenWidth;
-            var normalizedMinY = shaderMinY * invScreenHeight;
+            var normalizedMinX = rectInPx.xMin * invScreenWidth;
+            var normalizedMinY = rectInPx.yMin * invScreenHeight;
             var normalizedWidth = rectInPx.width * invScreenWidth;
             var normalizedHeight = rectInPx.height * invScreenHeight;
 

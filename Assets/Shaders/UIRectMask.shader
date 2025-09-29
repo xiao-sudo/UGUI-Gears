@@ -72,7 +72,7 @@ Shader "Custom_UIRectMask"
                 float4 vertex : SV_POSITION;
                 float4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
-                float4 worldPosition : TEXCOORD1;
+                float4 ndc : TEXCOORD1;
                 half4 mask : TEXCOORD2;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -97,8 +97,9 @@ Shader "Custom_UIRectMask"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
 
-                OUT.worldPosition = v.vertex;
-                OUT.vertex = TransformObjectToHClip(v.vertex.xyz);
+                VertexPositionInputs inputs = GetVertexPositionInputs(v.vertex.xyz);
+                OUT.vertex = inputs.positionCS;
+                OUT.ndc = inputs.positionNDC;
 
                 float2 pixelSize = OUT.vertex.w;
                 pixelSize /= float2(1, 1) * abs(mul((float2x2)UNITY_MATRIX_P, _ScreenParams.xy));
@@ -154,13 +155,15 @@ Shader "Custom_UIRectMask"
                 float2 normalizedlb = float2(_Rect.x, _Rect.y);
                 float2 normalizedSize = float2(_Rect.z, _Rect.w);
 
-                // convert normalied values to pixel
+                // convert normalized values to pixel
                 float2 lbCornerPx = normalizedlb * _ScreenParams.xy;
                 float2 sizePx = normalizedSize * _ScreenParams.xy;
                 float2 halfSizePx = sizePx * 0.5;
                 float2 centerPx = lbCornerPx + halfSizePx;
 
-                float2 distanceToCenter = abs(IN.worldPosition.xy - centerPx);
+                // current fragment position in pixel space
+                float2 posPx = (IN.ndc.xy / IN.ndc.w) * _ScreenParams.xy;
+                float2 distanceToCenter = abs(posPx - centerPx);
 
                 float2 inRect = step(distanceToCenter, halfSizePx);
                 float xyAllInRect = inRect.x * inRect.y;

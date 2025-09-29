@@ -159,7 +159,7 @@ namespace UIExt.Base
 
         private void UpdateRectMaskMaterial()
         {
-            var rect = UIRect.GetNormalizedRectInScreenSpaceWithCenterAsOrigin(m_MaskTargetTransform, RootCanvas);
+            var rect = UIRect.GetNormalizedRectInScreenSpace(m_MaskTargetTransform, RootCanvas);
             m_CurrentMaskMaterial.SetVector(RECT_ID, new Vector4(rect.x, rect.y, rect.width, rect.height));
         }
     }
