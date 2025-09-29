@@ -14,7 +14,7 @@ Shader "Custom_UIRectMask"
         _ColorMask("Color Mask", Float) = 15
 
         [Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip("Use Alpha Clip", Float) = 0
-        _Rect("Rect In Screen (Center, Size)", Vector) = (0, 0, 1000, 1000)
+        _Rect("Normalized Rect In Screen (MinXY, Size)", Vector) = (0, 0, 1, 1)
     }
 
     SubShader
@@ -107,7 +107,7 @@ Shader "Custom_UIRectMask"
                 float2 maskUV = (v.vertex.xy - clampedRect.xy) / (clampedRect.zw - clampedRect.xy);
                 OUT.texcoord = TRANSFORM_TEX(v.texcoord.xy, _MainTex);
                 OUT.mask = half4(v.vertex.xy * 2 - clampedRect.xy - clampedRect.zw,
-                                     0.25 / (0.25 * half2(_UIMaskSoftnessX, _UIMaskSoftnessY) + abs(pixelSize.xy)));
+                                 0.25 / (0.25 * half2(_UIMaskSoftnessX, _UIMaskSoftnessY) + abs(pixelSize.xy)));
 
                 OUT.color = v.color * _Color;
                 return OUT;
@@ -150,11 +150,19 @@ Shader "Custom_UIRectMask"
                 // Guaranteeing that your UI texture is selected "sRGB (Color Texture)" in "(Texture 2D) Import Setting".
                 color.rgb = lerp(color.rgb, LinearToSRGB(color.rgb), _IsInUICamera);
 
-                float2 center = _Rect.xy;
-                float2 halfSize = _Rect.zw * 0.5;
-                float2 distanceToCenter = abs(IN.worldPosition.xy - center);
-                
-                float2 inRect = step(distanceToCenter, halfSize);
+                // normalized values
+                float2 normalizedlb = float2(_Rect.x, _Rect.y);
+                float2 normalizedSize = float2(_Rect.z, _Rect.w);
+
+                // convert normalied values to pixel
+                float2 lbCornerPx = normalizedlb * _ScreenParams.xy;
+                float2 sizePx = normalizedSize * _ScreenParams.xy;
+                float2 halfSizePx = sizePx * 0.5;
+                float2 centerPx = lbCornerPx + halfSizePx;
+
+                float2 distanceToCenter = abs(IN.worldPosition.xy - centerPx);
+
+                float2 inRect = step(distanceToCenter, halfSizePx);
                 float xyAllInRect = inRect.x * inRect.y;
                 color.a *= 1 - xyAllInRect;
 

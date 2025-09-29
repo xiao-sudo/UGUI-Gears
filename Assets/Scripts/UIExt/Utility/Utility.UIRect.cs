@@ -60,7 +60,7 @@ namespace UIExt.Utility
         }
 
         /// <summary>
-        /// Get RectTransform's Rect in Screen Space, Origin (0, 0) is the left bottom corner of the screen
+        /// Get RectTransform's Rect (in pixels) in Screen Space, Origin (0, 0) is the left bottom corner of the screen
         /// </summary>
         /// <param name="target">target transform</param>
         /// <param name="uiCamera">current ui camera</param>
@@ -82,22 +82,29 @@ namespace UIExt.Utility
         }
 
         /// <summary>
-        /// Get RectTransform's Rect in Shader Screen Space, Origin (0, 0) is the screen center
-        /// This method uses camera's pixel dimensions to ensure consistency
+        /// Get RectTransform's Normalized Rect in Screen Space ((0, 0) is the screen center in shader)
         /// </summary>
         /// <param name="target">target transform</param>
         /// <param name="rootCanvas"></param>
         /// <returns>rect in Shader Screen Space</returns>
-        public static Rect GetRectInShaderScreenSpace(RectTransform target, Canvas rootCanvas)
+        public static Rect GetNormalizedRectInScreenSpaceWithCenterAsOrigin(RectTransform target, Canvas rootCanvas)
         {
             var uiCamera = rootCanvas.worldCamera;
-            var rect = GetRectInScreenSpace(target, uiCamera);
-            var size = GetAutoScreenSize(rootCanvas);
+            var rectInPx = GetRectInScreenSpace(target, uiCamera);
+            var screenSizeInPx = GetAutoScreenSize(rootCanvas);
 
-            var shaderMinX = rect.xMin - size.x * 0.5f;
-            var shaderMinY = rect.yMin - size.y * 0.5f;
+            var shaderMinX = rectInPx.xMin - screenSizeInPx.x * 0.5f;
+            var shaderMinY = rectInPx.yMin - screenSizeInPx.y * 0.5f;
 
-            return new Rect(shaderMinX, shaderMinY, rect.size.x, rect.size.y);
+            var invScreenWidth = 1 / screenSizeInPx.x;
+            var invScreenHeight = 1 / screenSizeInPx.y;
+
+            var normalizedMinX = shaderMinX * invScreenWidth;
+            var normalizedMinY = shaderMinY * invScreenHeight;
+            var normalizedWidth = rectInPx.width * invScreenWidth;
+            var normalizedHeight = rectInPx.height * invScreenHeight;
+
+            return new Rect(normalizedMinX, normalizedMinY, normalizedWidth, normalizedHeight);
         }
 
         public static bool SetTargetRectBySource(RectTransform target, RectTransform source)
