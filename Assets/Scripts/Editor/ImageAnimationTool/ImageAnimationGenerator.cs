@@ -31,14 +31,15 @@ namespace Editor.ImageAnimationTool
         }
 
         /// <summary>
-        /// 生成UGUI Image的AnimationClip
+        /// Generate AnimationClip for UGUI Image
         /// </summary>
-        /// <param name="sprites">要制作动画的Sprite列表</param>
-        /// <param name="animationName">动画名称</param>
-        /// <param name="frameRate">帧率</param>
-        /// <param name="loopAnimation">是否循环</param>
-        /// <returns>生成的AnimationClip，如果失败返回null</returns>
-        public static AnimationClip GenerateImageAnimationClip(List<Sprite> sprites, string animationName, float frameRate = 12f, bool loopAnimation = true)
+        /// <param name="sprites">List of Sprites to animate</param>
+        /// <param name="animationName">Animation name</param>
+        /// <param name="frameRate">Frame rate</param>
+        /// <param name="loopAnimation">Whether to loop the animation</param>
+        /// <param name="targetDirectory">Target save directory, use default if null</param>
+        /// <returns>Generated AnimationClip, null if failed</returns>
+        public static AnimationClip GenerateImageAnimationClip(List<Sprite> sprites, string animationName, float frameRate = 12f, bool loopAnimation = true, string targetDirectory = null)
         {
             if (sprites == null || sprites.Count == 0)
             {
@@ -54,17 +55,17 @@ namespace Editor.ImageAnimationTool
 
             try
             {
-                // 创建AnimationClip
+                // Create AnimationClip
                 var animationClip = new AnimationClip();
                 animationClip.name = animationName;
                 animationClip.frameRate = frameRate;
                 
-                // 设置循环属性（使用新的API）
+                // Set loop property (using new API)
                 var settings = AnimationUtility.GetAnimationClipSettings(animationClip);
                 settings.loopTime = loopAnimation;
                 AnimationUtility.SetAnimationClipSettings(animationClip, settings);
 
-                // 创建Sprite动画曲线
+                // Create Sprite animation curve
                 var spriteBinding = new EditorCurveBinding
                 {
                     path = "",
@@ -75,11 +76,11 @@ namespace Editor.ImageAnimationTool
                 float frameTime = 1f / frameRate;
                 var objectReferenceKeyframes = CreateObjectReferenceKeyframes(sprites, frameTime);
 
-                // 设置对象引用曲线
+                // Set object reference curve
                 AnimationUtility.SetObjectReferenceCurve(animationClip, spriteBinding, objectReferenceKeyframes);
 
-                // 保存AnimationClip
-                string assetPath = SaveAnimationClip(animationClip, animationName);
+                // Save AnimationClip
+                string assetPath = SaveAnimationClip(animationClip, animationName, targetDirectory);
                 if (!string.IsNullOrEmpty(assetPath))
                 {
                     Debug.Log($"ImageAnimationGenerator: Successfully created animation clip '{animationName}' at {assetPath}");
@@ -99,34 +100,71 @@ namespace Editor.ImageAnimationTool
         }
 
         /// <summary>
-        /// 使用当前选中的Sprites生成AnimationClip
+        /// Generate AnimationClip using currently selected Sprites
         /// </summary>
-        /// <param name="animationName">动画名称</param>
-        /// <param name="frameRate">帧率</param>
-        /// <param name="loopAnimation">是否循环</param>
-        /// <returns>生成的AnimationClip，如果失败返回null</returns>
+        /// <param name="animationName">Animation name</param>
+        /// <param name="frameRate">Frame rate</param>
+        /// <param name="loopAnimation">Whether to loop the animation</param>
+        /// <returns>Generated AnimationClip, null if failed</returns>
         public AnimationClip GenerateAnimationFromSelection(string animationName, float frameRate = 12f, bool loopAnimation = true)
         {
             var selectedSprites = SelectedSprites;
-            return GenerateImageAnimationClip(selectedSprites, animationName, frameRate, loopAnimation);
+            string targetDirectory = GetSelectedSpritesDirectory();
+            return GenerateImageAnimationClip(selectedSprites, animationName, frameRate, loopAnimation, targetDirectory);
         }
 
         /// <summary>
-        /// 获取选中Sprite的数量
+        /// Get the count of selected Sprites
         /// </summary>
-        /// <returns>选中Sprite的数量</returns>
+        /// <returns>Count of selected Sprites</returns>
         public int GetSelectedSpriteCount()
         {
             return SelectedSprites.Count;
         }
 
         /// <summary>
-        /// 检查是否有选中的Sprites
+        /// Check if there are selected Sprites
         /// </summary>
-        /// <returns>如果有选中的Sprites返回true，否则返回false</returns>
+        /// <returns>True if there are selected Sprites, false otherwise</returns>
         public bool HasSelectedSprites()
         {
             return SelectedSprites.Count > 0;
+        }
+
+        /// <summary>
+        /// Get the directory path of selected Sprites
+        /// </summary>
+        /// <returns>Directory path of Sprites, null if cannot be determined</returns>
+        public string GetSelectedSpritesDirectory()
+        {
+            var selectedSprites = SelectedSprites;
+            if (selectedSprites.Count == 0)
+                return null;
+
+            // Get the path of the first Sprite
+            string firstSpritePath = AssetDatabase.GetAssetPath(selectedSprites[0]);
+            if (string.IsNullOrEmpty(firstSpritePath))
+                return null;
+
+            // Extract directory path
+            string directory = System.IO.Path.GetDirectoryName(firstSpritePath);
+            
+            // Check if all Sprites are in the same directory
+            foreach (var sprite in selectedSprites)
+            {
+                string spritePath = AssetDatabase.GetAssetPath(sprite);
+                if (string.IsNullOrEmpty(spritePath))
+                    continue;
+                    
+                string spriteDir = System.IO.Path.GetDirectoryName(spritePath);
+                if (directory != spriteDir)
+                {
+                    // If Sprites are not in the same directory, return Assets root
+                    return "Assets";
+                }
+            }
+
+            return directory;
         }
 
         private void GatherSelectedSprites(List<Sprite> sprites)
@@ -190,20 +228,41 @@ namespace Editor.ImageAnimationTool
             return keyframes;
         }
 
-        private static string SaveAnimationClip(AnimationClip animationClip, string animationName)
+        private static string SaveAnimationClip(AnimationClip animationClip, string animationName, string targetDirectory = null)
         {
-            // 确保Animations文件夹存在
-            string folderPath = "Assets/Animations";
+            // Determine save directory
+            string folderPath = targetDirectory ?? "Assets/Animations";
+            
+            // Ensure target directory exists
             if (!AssetDatabase.IsValidFolder(folderPath))
             {
-                AssetDatabase.CreateFolder("Assets", "Animations");
+                // If directory doesn't exist, try to create it
+                string[] pathParts = folderPath.Split('/');
+                if (pathParts.Length > 1)
+                {
+                    string parentPath = string.Join("/", pathParts, 0, pathParts.Length - 1);
+                    string folderName = pathParts[pathParts.Length - 1];
+                    
+                    if (AssetDatabase.IsValidFolder(parentPath))
+                    {
+                        AssetDatabase.CreateFolder(parentPath, folderName);
+                    }
+                    else
+                    {
+                        // If parent directory doesn't exist either, fallback to Assets/Animations
+                        folderPath = "Assets/Animations";
+                        if (!AssetDatabase.IsValidFolder(folderPath))
+                        {
+                            AssetDatabase.CreateFolder("Assets", "Animations");
+                        }
+                    }
+                }
             }
 
             string assetPath = $"{folderPath}/{animationName}.anim";
             
-            // 如果文件已存在，添加数字后缀
+            // If file already exists, add numeric suffix
             int counter = 1;
-            string originalPath = assetPath;
             while (File.Exists(assetPath))
             {
                 assetPath = $"{folderPath}/{animationName}_{counter}.anim";
