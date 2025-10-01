@@ -48,7 +48,7 @@ namespace UIExt.Base
         }
 
         [SerializeField]
-        private GameObject m_PassThroughTarget;
+        private RectTransform m_PassThroughTarget;
 
         [SerializeField]
         private PassThroughType m_PassThroughType = PassThroughType.PassAtTargetRect;
@@ -58,19 +58,14 @@ namespace UIExt.Base
 
         private GameObject m_CachedGo;
         private Image m_MaskImage;
-        private RectTransform m_PassThroughTargetRect;
         private Action<GameObject> m_PassThroughClickCallback;
 
         private bool IsSpecifiedTarget => null != m_PassThroughTarget;
 
-        public GameObject PassThroughTarget
+        public RectTransform PassThroughTarget
         {
             get => m_PassThroughTarget;
-            set
-            {
-                m_PassThroughTarget = value;
-                m_PassThroughTargetRect = m_PassThroughTarget.GetComponent<RectTransform>();
-            }
+            set => m_PassThroughTarget = value;
         }
 
         public PassThroughType PassThroughStyle
@@ -150,12 +145,12 @@ namespace UIExt.Base
             switch (m_PassThroughType)
             {
                 case PassThroughType.PassAtTargetRect:
-                    return RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTargetRect,
-                        eventData.position, eventData.pressEventCamera);
+                    return RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTarget, eventData.position,
+                        eventData.pressEventCamera);
 
                 case PassThroughType.PassExcludeTargetRect:
-                    return !RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTargetRect,
-                        eventData.position, eventData.pressEventCamera);
+                    return !RectTransformUtility.RectangleContainsScreenPoint(m_PassThroughTarget, eventData.position,
+                        eventData.pressEventCamera);
 
                 case PassThroughType.PassAlways:
                     return true;

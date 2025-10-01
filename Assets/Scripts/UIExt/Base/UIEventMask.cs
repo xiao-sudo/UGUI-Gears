@@ -29,8 +29,7 @@ namespace UIExt.Base
 
         private Canvas m_Canvas;
 
-        private GameObject m_MaskTarget;
-        private RectTransform m_MaskTargetTransform;
+        private RectTransform m_UIMaskTarget;
         private Image m_MaskImage;
         private Material m_CurrentMaskMaterial;
 
@@ -69,7 +68,7 @@ namespace UIExt.Base
             }
         }
 
-        public void SetMaskTarget(GameObject target, MaskType maskType = MaskType.Rect)
+        public void SetUIMaskTarget(RectTransform target, MaskType maskType = MaskType.Rect)
         {
             if (null == target)
             {
@@ -77,13 +76,12 @@ namespace UIExt.Base
                 return;
             }
 
-            if (m_MaskTarget == target)
+            if (m_UIMaskTarget == target)
                 return;
 
-            m_MaskTarget = target;
-            m_MaskTargetTransform = m_MaskTarget.GetComponent<RectTransform>();
+            m_UIMaskTarget = target;
 
-            EventPassThrough.PassThroughTarget = m_MaskTarget;
+            EventPassThrough.PassThroughTarget = m_UIMaskTarget;
 
             if (m_MaskType != maskType)
                 SetMaskMaterial(maskType);
@@ -97,7 +95,7 @@ namespace UIExt.Base
             EventPassThrough.PassThroughStyle = PassThroughStyle;
         }
 
-        public RectTransform MaskTargetRectTransform => m_MaskTargetTransform;
+        public RectTransform UIMaskTarget => m_UIMaskTarget;
 
         private Image MaskImage
         {
@@ -155,11 +153,11 @@ namespace UIExt.Base
             }
         }
 
-        private static int RECT_ID = Shader.PropertyToID("_Rect");
+        private static readonly int RECT_ID = Shader.PropertyToID("_Rect");
 
         private void UpdateRectMaskMaterial()
         {
-            var rect = UIRect.GetNormalizedRectInScreenSpace(m_MaskTargetTransform, RootCanvas);
+            var rect = UIRect.GetNormalizedRectInScreenSpace(m_UIMaskTarget, RootCanvas);
             m_CurrentMaskMaterial.SetVector(RECT_ID, new Vector4(rect.x, rect.y, rect.width, rect.height));
         }
     }

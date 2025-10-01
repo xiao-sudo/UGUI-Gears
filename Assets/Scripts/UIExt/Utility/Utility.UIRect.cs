@@ -104,7 +104,14 @@ namespace UIExt.Utility
             return new Rect(normalizedMinX, normalizedMinY, normalizedWidth, normalizedHeight);
         }
 
-        public static bool SetTargetRectBySource(RectTransform target, RectTransform source)
+        /// <summary>
+        /// Set Target rect position and size by source target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="source"></param>
+        /// <param name="offset">(x, y) as center offset and (z, w) as size offset</param>
+        /// <returns></returns>
+        public static bool SetTargetRectBySource(RectTransform target, RectTransform source, Vector4 offset)
         {
             source.GetWorldCorners(CACHE_CORNERS);
 
@@ -131,8 +138,8 @@ namespace UIExt.Utility
             target.anchorMin = new Vector2(0.5f, 0.5f);
             target.anchorMax = new Vector2(0.5f, 0.5f);
 
-            target.anchoredPosition = center;
-            target.sizeDelta = new Vector2(width, height);
+            target.anchoredPosition = center + new Vector2(offset.x, offset.y);
+            target.sizeDelta = new Vector2(width + offset.z, height + offset.w);
 
             return true;
         }
