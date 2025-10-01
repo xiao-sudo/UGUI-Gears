@@ -12,6 +12,8 @@ namespace UIExt.ImageAnimation
         private Animator m_Animator;
         private AnimancerState m_AnimancerState;
 
+        public bool IsPlaying => m_AnimancerState != null && m_AnimancerState.IsPlaying;
+
         private void Awake()
         {
             m_Animator = GetComponent<Animator>();
@@ -39,6 +41,48 @@ namespace UIExt.ImageAnimation
         {
             m_Animator = null;
             m_Animancer = null;
+        }
+
+        /// <summary>
+        /// Manually play the animation
+        /// </summary>
+        public void Play()
+        {
+            PlayImpl();
+        }
+
+        /// <summary>
+        /// Manually stop the animation
+        /// </summary>
+        public void Stop()
+        {
+            StopImpl();
+        }
+
+        /// <summary>
+        /// Pause the animation
+        /// </summary>
+        public void Pause()
+        {
+            if (null != m_AnimancerState && m_AnimancerState.IsPlaying)
+            {
+                m_AnimancerState.Speed = 0;
+            }
+        }
+
+        /// <summary>
+        /// Resume the animation
+        /// </summary>
+        public void Resume()
+        {
+            if (null != m_AnimancerState)
+            {
+                m_AnimancerState.Speed = 1;
+                if (!m_AnimancerState.IsPlaying)
+                {
+                    m_AnimancerState.Play();
+                }
+            }
         }
 
         private void PlayImpl()
