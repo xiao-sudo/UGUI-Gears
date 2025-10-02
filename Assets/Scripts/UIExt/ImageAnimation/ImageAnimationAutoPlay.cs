@@ -1,9 +1,10 @@
 using Animancer;
+using UIExt.Base;
 using UnityEngine;
 
 namespace UIExt.ImageAnimation
 {
-    public class ImageAnimationAutoPlay : MonoBehaviour
+    public class ImageAnimationAutoPlay : AnimationBase
     {
         [SerializeField]
         private AnimationClip m_Clip;
@@ -12,9 +13,20 @@ namespace UIExt.ImageAnimation
         private Animator m_Animator;
         private AnimancerState m_AnimancerState;
 
-        public bool IsPlaying => m_AnimancerState != null && m_AnimancerState.IsPlaying;
+        public override bool IsPlaying => m_AnimancerState != null && m_AnimancerState.IsPlaying;
 
-        private void Awake()
+        public override float NormalizedTime
+        {
+            get
+            {
+                if (null != m_AnimancerState)
+                    return m_AnimancerState.NormalizedTime;
+
+                return 0;
+            }
+        }
+
+        protected override void InitializeAnimation()
         {
             m_Animator = GetComponent<Animator>();
             if (null == m_Animator)
@@ -25,59 +37,46 @@ namespace UIExt.ImageAnimation
                 m_Animancer = gameObject.AddComponent<AnimancerComponent>();
 
             m_Animancer.Animator = m_Animator;
+
+            // Set duration from clip
+            if (m_Clip != null)
+            {
+                m_Duration = m_Clip.length;
+            }
         }
 
-        private void OnEnable()
+        protected override void OnPlayInternal()
         {
-            PlayImpl();
+            if (m_AnimancerState != null)
+            {
+                m_AnimancerState.Play();
+            }
+            else
+            {
+                if (m_Clip != null)
+                {
+                    m_AnimancerState = m_Animancer.Play(m_Clip);
+                    m_AnimancerState.Speed = m_Speed;
+
+                    // Register OnEnd callback for completion detection
+                    m_AnimancerState.OwnedEvents.OnEnd = OnAnimancerStateEnd;
+                }
+            }
         }
 
-        private void OnDisable()
+        protected override void OnPauseInternal()
         {
-            StopImpl();
-        }
-
-        private void OnDestroy()
-        {
-            m_Animator = null;
-            m_Animancer = null;
-        }
-
-        /// <summary>
-        /// Manually play the animation
-        /// </summary>
-        public void Play()
-        {
-            PlayImpl();
-        }
-
-        /// <summary>
-        /// Manually stop the animation
-        /// </summary>
-        public void Stop()
-        {
-            StopImpl();
-        }
-
-        /// <summary>
-        /// Pause the animation
-        /// </summary>
-        public void Pause()
-        {
-            if (null != m_AnimancerState && m_AnimancerState.IsPlaying)
+            if (m_AnimancerState != null && m_AnimancerState.IsPlaying)
             {
                 m_AnimancerState.Speed = 0;
             }
         }
 
-        /// <summary>
-        /// Resume the animation
-        /// </summary>
-        public void Resume()
+        protected override void OnResumeInternal()
         {
-            if (null != m_AnimancerState)
+            if (m_AnimancerState != null)
             {
-                m_AnimancerState.Speed = 1;
+                m_AnimancerState.Speed = m_Speed;
                 if (!m_AnimancerState.IsPlaying)
                 {
                     m_AnimancerState.Play();
@@ -85,21 +84,50 @@ namespace UIExt.ImageAnimation
             }
         }
 
-        private void PlayImpl()
+        protected override void OnStopInternal()
         {
-            if (null != m_AnimancerState)
-                m_AnimancerState.Play();
-            else
+            if (m_AnimancerState != null)
             {
-                if (null != m_Clip)
-                    m_AnimancerState = m_Animancer.Play(m_Clip);
+                m_AnimancerState.OwnedEvents.OnEnd = null; // Clear callback to prevent memory leaks
+                m_AnimancerState.Stop();
             }
         }
 
-        private void StopImpl()
+        /// <summary>
+        /// Called when AnimancerState ends
+        /// </summary>
+        private void OnAnimancerStateEnd()
         {
-            if (null != m_AnimancerState)
-                m_AnimancerState.Stop();
+            OnAnimationComplete();
+        }
+
+        protected override bool ValidateAnimation()
+        {
+            if (m_Clip == null)
+            {
+                Debug.LogError($"[{GetType().Name}] Animation clip is null");
+                return false;
+            }
+
+            if (m_Animancer == null)
+            {
+                Debug.LogError($"[{GetType().Name}] Animancer component is null");
+                return false;
+            }
+
+            if (m_Animator == null)
+            {
+                Debug.LogError($"[{GetType().Name}] Animator component is null");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            m_Animator = null;
+            m_Animancer = null;
         }
     }
 }
