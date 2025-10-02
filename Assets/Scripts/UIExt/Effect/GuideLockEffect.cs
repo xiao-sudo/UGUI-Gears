@@ -30,9 +30,7 @@ namespace UIExt.Effect
         [Tooltip("Offset for the focus frame (x,y: center offset, z,w: width/height increase)")]
         private Vector4 m_FocusOffset = new Vector4(0, 0, 0, 0);
 
-        [SerializeField]
-        [Tooltip("Focus frame animation")]
-        private ImageAnimationAutoPlay m_FocusAnimation;
+        private IAnimation m_FocusAnimation;
 
         private UIEventMask m_EventMask;
         private Action<GameObject> m_OnTargetClick;
@@ -114,7 +112,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set focus animation
         /// </summary>
-        public GuideLockEffect SetFocusAnimation(ImageAnimationAutoPlay imageAnimation)
+        public GuideLockEffect SetFocusAnimation(IAnimation imageAnimation)
         {
             m_FocusAnimation = imageAnimation;
             return this;
@@ -151,7 +149,7 @@ namespace UIExt.Effect
                 // Play animation if exists
                 if (m_FocusAnimation != null)
                 {
-                    m_FocusAnimation.enabled = true;
+                    m_FocusAnimation.Initialize();
                     m_FocusAnimation.Play();
                 }
             }
@@ -170,7 +168,6 @@ namespace UIExt.Effect
                 if (m_FocusAnimation != null)
                 {
                     m_FocusAnimation.Stop();
-                    m_FocusAnimation.enabled = false;
                 }
 
                 m_FocusFrame.gameObject.SetActive(false);
