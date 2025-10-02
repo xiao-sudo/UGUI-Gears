@@ -12,6 +12,7 @@ namespace UIExt.ImageAnimation
         private AnimancerComponent m_Animancer;
         private Animator m_Animator;
         private AnimancerState m_AnimancerState;
+        private AnimancerEvent m_OneLoopEndEvent;
 
         public override bool IsPlaying => m_AnimancerState != null && m_AnimancerState.IsPlaying;
 
@@ -37,6 +38,7 @@ namespace UIExt.ImageAnimation
                 m_Animancer = gameObject.AddComponent<AnimancerComponent>();
 
             m_Animancer.Animator = m_Animator;
+            m_OneLoopEndEvent = new AnimancerEvent(AnimancerEvent.AlmostOne, OnAnimancerStateEnd);
 
             // Set duration from clip
             if (m_Clip != null)
@@ -58,8 +60,7 @@ namespace UIExt.ImageAnimation
                     m_AnimancerState = m_Animancer.Play(m_Clip);
                     m_AnimancerState.Speed = m_Speed;
 
-                    // Register OnEnd callback for completion detection
-                    m_AnimancerState.OwnedEvents.OnEnd = OnAnimancerStateEnd;
+                    m_AnimancerState.OwnedEvents.Add(m_OneLoopEndEvent);
                 }
             }
         }
@@ -88,16 +89,24 @@ namespace UIExt.ImageAnimation
         {
             if (m_AnimancerState != null)
             {
-                m_AnimancerState.OwnedEvents.OnEnd = null; // Clear callback to prevent memory leaks
+                m_AnimancerState.OwnedEvents.Remove(m_OneLoopEndEvent);
                 m_AnimancerState.Stop();
             }
         }
 
         /// <summary>
-        /// Called when AnimancerState ends
+        /// Called when AnimancerState ends one loop
         /// </summary>
         private void OnAnimancerStateEnd()
         {
+            if (m_Loop)
+            {
+                m_AnimancerState.Time = 0;
+                m_AnimancerState.Play();
+                return;
+            }
+
+            Stop();
             OnAnimationComplete();
         }
 
