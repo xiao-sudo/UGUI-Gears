@@ -88,6 +88,16 @@ namespace UIExt.Guide.Conditions
         /// Time when condition was registered (for timeout calculation)
         /// </summary>
         float RegistrationTime { get; set; }
+        
+        /// <summary>
+        /// Whether this condition needs periodic state checking
+        /// </summary>
+        bool NeedsStateChecking { get; }
+        
+        /// <summary>
+        /// Perform state checking if needed
+        /// </summary>
+        void PerformStateCheck();
     }
 }
 

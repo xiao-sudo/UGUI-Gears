@@ -59,6 +59,19 @@ namespace UIExt.Guide.Conditions.CompositeConditions
         {
             return isSatisfied;
         }
+
+        /// <summary>
+        /// Composite conditions need periodic state checking to update their satisfaction status
+        /// </summary>
+        public override bool NeedsStateChecking => true;
+
+        /// <summary>
+        /// Perform state checking for composite conditions
+        /// </summary>
+        public override void PerformStateCheck()
+        {
+            CheckSatisfaction();
+        }
         
         protected override void OnStartListening()
         {

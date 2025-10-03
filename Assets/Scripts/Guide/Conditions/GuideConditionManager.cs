@@ -1,9 +1,6 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace UIExt.Guide.Conditions
 {
@@ -22,13 +19,14 @@ namespace UIExt.Guide.Conditions
         private bool m_EnableDebugLog = false;
 
         private Dictionary<string, IGuideCondition> m_ActiveConditions;
-        private List<IGuideCondition> m_ConditionsToCheck;
-        private Coroutine m_CheckCoroutine;
+        private List<IGuideCondition> m_ConditionsToCheck; // Conditions that need state checking
+        private List<IGuideCondition> m_ConditionsWithTimeout; // Conditions with timeout settings
         private bool m_IsInitialized;
 
-        /// <summary>
-        /// Check interval
-        /// </summary>
+        // Time control for Update method
+        private float m_ElapsedTime = 0f;
+        private bool m_IsCheckingEnabled = true;
+
         public float CheckInterval
         {
             get => m_CheckInterval;
@@ -68,20 +66,31 @@ namespace UIExt.Guide.Conditions
             if (m_IsInitialized) return;
 
             m_ActiveConditions = new Dictionary<string, IGuideCondition>();
-            m_ConditionsToCheck = new List<IGuideCondition>();
+            m_ConditionsToCheck = new List<IGuideCondition>(); // Conditions that need state checking
+            m_ConditionsWithTimeout = new List<IGuideCondition>(); // Conditions with timeout settings
             m_IsInitialized = true;
 
             LogDebug("GuideConditionManager initialized");
         }
 
-        private void Start()
+        private void Update()
         {
-            StartConditionChecking();
+            // Early exit for performance optimization
+            if (!m_IsCheckingEnabled) return;
+
+            m_ElapsedTime += Time.deltaTime;
+            if (m_ElapsedTime >= m_CheckInterval)
+            {
+                m_ElapsedTime = 0f;
+
+                // Handle state checking and timeout checking separately
+                CheckConditionStates();
+                CheckTimeoutConditions();
+            }
         }
 
         private void OnDestroy()
         {
-            StopConditionChecking();
             ClearAllConditions();
         }
 
@@ -108,12 +117,21 @@ namespace UIExt.Guide.Conditions
             // Subscribe to condition changes for auto cleanup
             condition.OnConditionChanged += OnConditionStateChanged;
 
-            // If condition needs periodic checking, add to check list
+            // If condition needs periodic state checking, add to state check list
             if (ShouldCheckCondition(condition))
             {
                 if (!m_ConditionsToCheck.Contains(condition))
                 {
                     m_ConditionsToCheck.Add(condition);
+                }
+            }
+
+            // If condition has timeout, add to timeout check list
+            if (HasTimeout(condition))
+            {
+                if (!m_ConditionsWithTimeout.Contains(condition))
+                {
+                    m_ConditionsWithTimeout.Add(condition);
                 }
             }
 
@@ -130,6 +148,7 @@ namespace UIExt.Guide.Conditions
             if (m_ActiveConditions.Remove(condition.ConditionId))
             {
                 m_ConditionsToCheck.Remove(condition);
+                m_ConditionsWithTimeout.Remove(condition);
 
                 // Unsubscribe from condition changes
                 condition.OnConditionChanged -= OnConditionStateChanged;
@@ -145,40 +164,126 @@ namespace UIExt.Guide.Conditions
         }
 
         /// <summary>
-        /// Unregister condition by ID
+        /// Enable/disable condition checking
         /// </summary>
-        public void UnregisterCondition(string conditionId)
+        public void SetCheckingEnabled(bool checkEnable)
         {
-            if (string.IsNullOrEmpty(conditionId)) return;
+            m_IsCheckingEnabled = checkEnable;
+            LogDebug($"Condition checking {(checkEnable ? "enabled" : "disabled")}");
+        }
 
-            if (m_ActiveConditions.TryGetValue(conditionId, out IGuideCondition condition))
+        /// <summary>
+        /// Force check all conditions immediately
+        /// </summary>
+        public void ForceCheckAllConditions()
+        {
+            CheckConditionStates();
+            CheckTimeoutConditions();
+        }
+
+        /// <summary>
+        /// Check condition states (for conditions that need periodic state checking)
+        /// </summary>
+        private void CheckConditionStates()
+        {
+            if (m_ConditionsToCheck == null || m_ConditionsToCheck.Count == 0) return;
+
+            for (int i = m_ConditionsToCheck.Count - 1; i >= 0; i--)
+            {
+                var condition = m_ConditionsToCheck[i];
+
+                if (condition == null)
+                {
+                    m_ConditionsToCheck.RemoveAt(i);
+                    continue;
+                }
+
+                // Check specific condition types that need state monitoring
+                CheckSpecificCondition(condition);
+            }
+        }
+
+        private void CheckSpecificCondition(IGuideCondition condition)
+        {
+            // Use the condition's own state checking method
+            condition.PerformStateCheck();
+        }
+
+        /// <summary>
+        /// Check timeout conditions (for conditions with timeout settings)
+        /// </summary>
+        private void CheckTimeoutConditions()
+        {
+            if (m_ConditionsWithTimeout == null || m_ConditionsWithTimeout.Count == 0) return;
+
+            var currentTime = Time.time;
+            var conditionsToRemove = new List<IGuideCondition>();
+
+            for (int i = m_ConditionsWithTimeout.Count - 1; i >= 0; i--)
+            {
+                var condition = m_ConditionsWithTimeout[i];
+
+                if (condition == null)
+                {
+                    m_ConditionsWithTimeout.RemoveAt(i);
+                    continue;
+                }
+
+                // Check if condition should time out
+                if ((condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnTimeout ||
+                     condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout) &&
+                    condition.TimeoutSeconds > 0f)
+                {
+                    var elapsedTime = currentTime - condition.RegistrationTime;
+                    if (elapsedTime >= condition.TimeoutSeconds)
+                    {
+                        LogDebug(
+                            $"Auto cleaning up timeout condition: {condition.ConditionId} (elapsed: {elapsedTime:F2}s)");
+                        conditionsToRemove.Add(condition);
+                    }
+                }
+            }
+
+            // Batch remove to avoid modifying collection during iteration
+            foreach (var condition in conditionsToRemove)
             {
                 UnregisterCondition(condition);
             }
         }
 
-        /// <summary>
-        /// Get condition
-        /// </summary>
-        public IGuideCondition GetCondition(string conditionId)
+        private void OnConditionStateChanged(IGuideCondition condition)
         {
-            if (string.IsNullOrEmpty(conditionId)) return null;
+            if (condition == null) return;
 
-            m_ActiveConditions.TryGetValue(conditionId, out IGuideCondition condition);
-            return condition;
+            if (condition.IsSatisfied())
+            {
+                if (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfied ||
+                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout)
+                {
+                    LogDebug($"Auto cleaning up satisfied condition: {condition.ConditionId}");
+                    UnregisterCondition(condition);
+                }
+            }
         }
 
         /// <summary>
-        /// Check if condition exists
+        /// Check if condition needs periodic state checking
         /// </summary>
-        public bool HasCondition(string conditionId)
+        private bool ShouldCheckCondition(IGuideCondition condition)
         {
-            return !string.IsNullOrEmpty(conditionId) && m_ActiveConditions.ContainsKey(conditionId);
+            return condition.NeedsStateChecking;
         }
 
         /// <summary>
-        /// Clear all conditions
+        /// Check if condition has timeout settings
         /// </summary>
+        private bool HasTimeout(IGuideCondition condition)
+        {
+            return (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnTimeout ||
+                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout) &&
+                   condition.TimeoutSeconds > 0f;
+        }
+
         public void ClearAllConditions()
         {
             if (m_ActiveConditions == null) return;
@@ -193,100 +298,11 @@ namespace UIExt.Guide.Conditions
 
             m_ActiveConditions.Clear();
             m_ConditionsToCheck.Clear();
+            m_ConditionsWithTimeout.Clear();
 
             LogDebug("Cleared all conditions");
         }
 
-        /// <summary>
-        /// Start condition checking
-        /// </summary>
-        public void StartConditionChecking()
-        {
-            if (m_CheckCoroutine != null) return;
-
-            m_CheckCoroutine = StartCoroutine(ConditionCheckCoroutine());
-            LogDebug("Started condition checking");
-        }
-
-        /// <summary>
-        /// Stop condition checking
-        /// </summary>
-        public void StopConditionChecking()
-        {
-            if (m_CheckCoroutine != null)
-            {
-                StopCoroutine(m_CheckCoroutine);
-                m_CheckCoroutine = null;
-                LogDebug("Stopped condition checking");
-            }
-        }
-
-        private IEnumerator ConditionCheckCoroutine()
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(m_CheckInterval);
-
-                CheckAllConditions();
-            }
-        }
-
-        private void CheckAllConditions()
-        {
-            if (m_ConditionsToCheck == null) return;
-
-            for (int i = m_ConditionsToCheck.Count - 1; i >= 0; i--)
-            {
-                var condition = m_ConditionsToCheck[i];
-
-                if (condition == null)
-                {
-                    m_ConditionsToCheck.RemoveAt(i);
-                    continue;
-                }
-
-                // Check specific condition types
-                CheckSpecificCondition(condition);
-            }
-
-            // Check for timeout conditions
-            CheckTimeoutConditions();
-        }
-
-        private void CheckSpecificCondition(IGuideCondition condition)
-        {
-            switch (condition)
-            {
-                case UIConditions.UIStateCondition uiStateCondition:
-                    uiStateCondition.CheckStateChange();
-                    break;
-
-                // Can add more condition types that need periodic checking
-            }
-        }
-
-        private bool ShouldCheckCondition(IGuideCondition condition)
-        {
-            // Determine if condition needs periodic checking
-            return condition is UIConditions.UIStateCondition;
-        }
-
-        /// <summary>
-        /// Force check all active conditions
-        /// </summary>
-        public void ForceCheckAllConditions()
-        {
-            if (m_ActiveConditions == null) return;
-
-            foreach (var condition in m_ActiveConditions.Values)
-            {
-                CheckSpecificCondition(condition);
-            }
-        }
-
-        /// <summary>
-        /// Get descriptions of all active conditions
-        /// </summary>
         public List<string> GetAllConditionDescriptions()
         {
             if (m_ActiveConditions == null) return new List<string>();
@@ -321,75 +337,21 @@ namespace UIExt.Guide.Conditions
                 .ToList();
         }
 
-        /// <summary>
-        /// Handle condition state changes for auto cleanup
-        /// </summary>
-        private void OnConditionStateChanged(IGuideCondition condition)
+        public bool HasCondition(string conditionId)
         {
-            if (condition == null) return;
-
-            // Check if condition should be auto cleaned up
-            if (condition.IsSatisfied())
-            {
-                if (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfied ||
-                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout)
-                {
-                    LogDebug($"Auto cleaning up satisfied condition: {condition.ConditionId}");
-                    UnregisterCondition(condition);
-                }
-            }
+            return !string.IsNullOrEmpty(conditionId) && m_ActiveConditions.ContainsKey(conditionId);
         }
 
-        /// <summary>
-        /// Check for timeout conditions and clean them up
-        /// </summary>
-        private void CheckTimeoutConditions()
+        public IGuideCondition GetCondition(string conditionId)
         {
-            if (m_ActiveConditions == null) return;
-
-            var currentTime = Time.time;
-            var conditionsToRemove = new List<IGuideCondition>();
-
-            foreach (var condition in m_ActiveConditions.Values)
-            {
-                if (condition == null) continue;
-
-                // Check timeout conditions
-                if ((condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnTimeout ||
-                     condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout) && 
-                    condition.TimeoutSeconds > 0f)
-                {
-                    var elapsedTime = currentTime - condition.RegistrationTime;
-                    if (elapsedTime >= condition.TimeoutSeconds)
-                    {
-                        LogDebug($"Auto cleaning up timeout condition: {condition.ConditionId} (elapsed: {elapsedTime:F2}s)");
-                        conditionsToRemove.Add(condition);
-                    }
-                }
-            }
-
-            // Remove timeout conditions
-            foreach (var condition in conditionsToRemove)
-            {
-                UnregisterCondition(condition);
-            }
+            if (string.IsNullOrEmpty(conditionId)) return null;
+            m_ActiveConditions.TryGetValue(conditionId, out IGuideCondition condition);
+            return condition;
         }
 
-        private void LogDebug(string message)
-        {
-            if (m_EnableDebugLog)
-            {
-                Debug.Log($"[GuideConditionManager] {message}");
-            }
-        }
-
-        /// <summary>
-        /// Register condition with auto cleanup when satisfied
-        /// </summary>
         public void RegisterAutoCleanupCondition(IGuideCondition condition)
         {
             if (condition == null) return;
-            
             condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfied;
             RegisterCondition(condition);
         }
@@ -400,7 +362,7 @@ namespace UIExt.Guide.Conditions
         public void RegisterTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
         {
             if (condition == null) return;
-            
+
             condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnTimeout;
             condition.TimeoutSeconds = timeoutSeconds;
             RegisterCondition(condition);
@@ -412,7 +374,7 @@ namespace UIExt.Guide.Conditions
         public void RegisterPersistentCondition(IGuideCondition condition)
         {
             if (condition == null) return;
-            
+
             condition.CleanupStrategy = ConditionCleanupStrategy.Persistent;
             RegisterCondition(condition);
         }
@@ -423,79 +385,18 @@ namespace UIExt.Guide.Conditions
         public void RegisterSatisfiedOrTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
         {
             if (condition == null) return;
-            
+
             condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout;
             condition.TimeoutSeconds = timeoutSeconds;
             RegisterCondition(condition);
         }
 
-        /// <summary>
-        /// Create condition builder (for chaining)
-        /// </summary>
-        public static ConditionBuilder CreateBuilder()
+        private void LogDebug(string message)
         {
-            return new ConditionBuilder();
-        }
-    }
-
-    /// <summary>
-    /// Condition builder
-    /// </summary>
-    public class ConditionBuilder
-    {
-        private List<IGuideCondition> conditions;
-
-        public ConditionBuilder()
-        {
-            conditions = new List<IGuideCondition>();
-        }
-
-        /// <summary>
-        /// Add condition
-        /// </summary>
-        public ConditionBuilder AddCondition(IGuideCondition condition)
-        {
-            if (condition != null)
+            if (m_EnableDebugLog)
             {
-                conditions.Add(condition);
+                Debug.Log($"[GuideConditionManager] {message}");
             }
-
-            return this;
-        }
-
-        /// <summary>
-        /// Create AND composite condition
-        /// </summary>
-        public CompositeConditions.CompositeCondition BuildAndCondition()
-        {
-            return new CompositeConditions.CompositeCondition(CompositeConditions.CompositeLogicType.AND,
-                conditions.ToArray());
-        }
-
-        /// <summary>
-        /// Create OR composite condition
-        /// </summary>
-        public CompositeConditions.CompositeCondition BuildOrCondition()
-        {
-            return new CompositeConditions.CompositeCondition(CompositeConditions.CompositeLogicType.OR,
-                conditions.ToArray());
-        }
-
-        /// <summary>
-        /// Create XOR composite condition
-        /// </summary>
-        public CompositeConditions.CompositeCondition BuildXorCondition()
-        {
-            return new CompositeConditions.CompositeCondition(CompositeConditions.CompositeLogicType.XOR,
-                conditions.ToArray());
-        }
-
-        /// <summary>
-        /// Get condition列表
-        /// </summary>
-        public List<IGuideCondition> GetConditions()
-        {
-            return new List<IGuideCondition>(conditions);
         }
     }
 }

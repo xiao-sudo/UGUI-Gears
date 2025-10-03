@@ -62,6 +62,19 @@ namespace UIExt.Guide.Conditions.UIConditions
             m_ExpectedValue = expected;
         }
 
+        /// <summary>
+        /// UI state conditions need periodic state checking
+        /// </summary>
+        public override bool NeedsStateChecking => true;
+
+        /// <summary>
+        /// Perform state checking for UI state conditions
+        /// </summary>
+        public override void PerformStateCheck()
+        {
+            CheckStateChange();
+        }
+
         public override bool IsSatisfied()
         {
             if (m_TargetObject == null) return false;

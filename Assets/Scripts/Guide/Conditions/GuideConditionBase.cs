@@ -45,6 +45,21 @@ namespace UIExt.Guide.Conditions
             set => m_RegistrationTime = value;
         }
 
+        /// <summary>
+        /// Whether this condition needs periodic state checking
+        /// Default implementation returns false
+        /// </summary>
+        public virtual bool NeedsStateChecking => false;
+
+        /// <summary>
+        /// Perform state checking if needed
+        /// Default implementation does nothing
+        /// </summary>
+        public virtual void PerformStateCheck()
+        {
+            // Default implementation - do nothing
+        }
+
         public event Action<IGuideCondition> OnConditionChanged;
 
         protected GuideConditionBase()
