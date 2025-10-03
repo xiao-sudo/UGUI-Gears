@@ -100,7 +100,13 @@ namespace UIExt.Guide.Conditions
                 return;
             }
 
+            // Set registration time for timeout calculation
+            condition.RegistrationTime = Time.time;
+
             m_ActiveConditions[condition.ConditionId] = condition;
+
+            // Subscribe to condition changes for auto cleanup
+            condition.OnConditionChanged += OnConditionStateChanged;
 
             // If condition needs periodic checking, add to check list
             if (ShouldCheckCondition(condition))
@@ -111,7 +117,7 @@ namespace UIExt.Guide.Conditions
                 }
             }
 
-            LogDebug($"Registered condition: {condition.ConditionId}");
+            LogDebug($"Registered condition: {condition.ConditionId} with strategy: {condition.CleanupStrategy}");
         }
 
         /// <summary>
@@ -124,6 +130,9 @@ namespace UIExt.Guide.Conditions
             if (m_ActiveConditions.Remove(condition.ConditionId))
             {
                 m_ConditionsToCheck.Remove(condition);
+
+                // Unsubscribe from condition changes
+                condition.OnConditionChanged -= OnConditionStateChanged;
 
                 // Stop listening
                 if (condition.IsListening)
@@ -239,6 +248,9 @@ namespace UIExt.Guide.Conditions
                 // Check specific condition types
                 CheckSpecificCondition(condition);
             }
+
+            // Check for timeout conditions
+            CheckTimeoutConditions();
         }
 
         private void CheckSpecificCondition(IGuideCondition condition)
@@ -309,12 +321,112 @@ namespace UIExt.Guide.Conditions
                 .ToList();
         }
 
+        /// <summary>
+        /// Handle condition state changes for auto cleanup
+        /// </summary>
+        private void OnConditionStateChanged(IGuideCondition condition)
+        {
+            if (condition == null) return;
+
+            // Check if condition should be auto cleaned up
+            if (condition.IsSatisfied())
+            {
+                if (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfied ||
+                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout)
+                {
+                    LogDebug($"Auto cleaning up satisfied condition: {condition.ConditionId}");
+                    UnregisterCondition(condition);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check for timeout conditions and clean them up
+        /// </summary>
+        private void CheckTimeoutConditions()
+        {
+            if (m_ActiveConditions == null) return;
+
+            var currentTime = Time.time;
+            var conditionsToRemove = new List<IGuideCondition>();
+
+            foreach (var condition in m_ActiveConditions.Values)
+            {
+                if (condition == null) continue;
+
+                // Check timeout conditions
+                if ((condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnTimeout ||
+                     condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout) && 
+                    condition.TimeoutSeconds > 0f)
+                {
+                    var elapsedTime = currentTime - condition.RegistrationTime;
+                    if (elapsedTime >= condition.TimeoutSeconds)
+                    {
+                        LogDebug($"Auto cleaning up timeout condition: {condition.ConditionId} (elapsed: {elapsedTime:F2}s)");
+                        conditionsToRemove.Add(condition);
+                    }
+                }
+            }
+
+            // Remove timeout conditions
+            foreach (var condition in conditionsToRemove)
+            {
+                UnregisterCondition(condition);
+            }
+        }
+
         private void LogDebug(string message)
         {
             if (m_EnableDebugLog)
             {
                 Debug.Log($"[GuideConditionManager] {message}");
             }
+        }
+
+        /// <summary>
+        /// Register condition with auto cleanup when satisfied
+        /// </summary>
+        public void RegisterAutoCleanupCondition(IGuideCondition condition)
+        {
+            if (condition == null) return;
+            
+            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfied;
+            RegisterCondition(condition);
+        }
+
+        /// <summary>
+        /// Register condition with timeout auto cleanup
+        /// </summary>
+        public void RegisterTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
+        {
+            if (condition == null) return;
+            
+            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnTimeout;
+            condition.TimeoutSeconds = timeoutSeconds;
+            RegisterCondition(condition);
+        }
+
+        /// <summary>
+        /// Register persistent condition (never auto cleanup)
+        /// </summary>
+        public void RegisterPersistentCondition(IGuideCondition condition)
+        {
+            if (condition == null) return;
+            
+            condition.CleanupStrategy = ConditionCleanupStrategy.Persistent;
+            RegisterCondition(condition);
+        }
+
+        /// <summary>
+        /// Register condition with both satisfied and timeout auto cleanup
+        /// </summary>
+        public void RegisterSatisfiedOrTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
+        {
+            if (condition == null) return;
+            
+            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout;
+            condition.TimeoutSeconds = timeoutSeconds;
+            RegisterCondition(condition);
         }
 
         /// <summary>

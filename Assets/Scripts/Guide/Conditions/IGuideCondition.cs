@@ -3,6 +3,37 @@ using System;
 namespace UIExt.Guide.Conditions
 {
     /// <summary>
+    /// Condition cleanup strategy
+    /// </summary>
+    public enum ConditionCleanupStrategy
+    {
+        /// <summary>
+        /// Manual cleanup - requires explicit unregister call
+        /// </summary>
+        Manual,
+        
+        /// <summary>
+        /// Auto cleanup when condition is satisfied
+        /// </summary>
+        AutoOnSatisfied,
+        
+        /// <summary>
+        /// Auto cleanup when timeout is reached
+        /// </summary>
+        AutoOnTimeout,
+        
+        /// <summary>
+        /// Auto cleanup when condition is satisfied OR timeout is reached (whichever comes first)
+        /// </summary>
+        AutoOnSatisfiedOrTimeout,
+        
+        /// <summary>
+        /// Persistent condition - never auto cleanup
+        /// </summary>
+        Persistent
+    }
+
+    /// <summary>
     /// Guide condition interface
     /// </summary>
     public interface IGuideCondition
@@ -42,6 +73,21 @@ namespace UIExt.Guide.Conditions
         /// Get description of the condition
         /// </summary>
         string GetDescription();
+        
+        /// <summary>
+        /// Cleanup strategy for this condition
+        /// </summary>
+        ConditionCleanupStrategy CleanupStrategy { get; set; }
+        
+        /// <summary>
+        /// Timeout in seconds for AutoOnTimeout strategy (0 = no timeout)
+        /// </summary>
+        float TimeoutSeconds { get; set; }
+        
+        /// <summary>
+        /// Time when condition was registered (for timeout calculation)
+        /// </summary>
+        float RegistrationTime { get; set; }
     }
 }
 

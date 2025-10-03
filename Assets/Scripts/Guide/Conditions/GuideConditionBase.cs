@@ -15,8 +15,35 @@ namespace UIExt.Guide.Conditions
         [SerializeField]
         protected string m_Description;
 
+        [SerializeField]
+        protected ConditionCleanupStrategy m_CleanupStrategy = ConditionCleanupStrategy.Manual;
+
+        [SerializeField]
+        protected float m_TimeoutSeconds = 0f;
+
+        [SerializeField]
+        protected float m_RegistrationTime = 0f;
+
         public string ConditionId => m_ConditionId;
         public bool IsListening { get; protected set; }
+
+        public ConditionCleanupStrategy CleanupStrategy
+        {
+            get => m_CleanupStrategy;
+            set => m_CleanupStrategy = value;
+        }
+
+        public float TimeoutSeconds
+        {
+            get => m_TimeoutSeconds;
+            set => m_TimeoutSeconds = Mathf.Max(0f, value);
+        }
+
+        public float RegistrationTime
+        {
+            get => m_RegistrationTime;
+            set => m_RegistrationTime = value;
+        }
 
         public event Action<IGuideCondition> OnConditionChanged;
 
