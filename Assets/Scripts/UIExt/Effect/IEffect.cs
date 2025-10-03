@@ -4,9 +4,9 @@ using UnityEngine;
 namespace UIExt.Effect
 {
     /// <summary>
-    /// Guide effect interface
+    /// effect interface
     /// </summary>
-    public interface IGuideEffect
+    public interface IEffect
     {
         /// <summary>
         /// Effect target
@@ -41,12 +41,12 @@ namespace UIExt.Effect
         /// <summary>
         /// Set complete callback
         /// </summary>
-        IGuideEffect OnComplete(Action onComplete);
+        IEffect OnComplete(Action onComplete);
 
         /// <summary>
         /// Set cancel callback
         /// </summary>
-        IGuideEffect OnCancel(Action onCancel);
+        IEffect OnCancel(Action onCancel);
     }
 }
 

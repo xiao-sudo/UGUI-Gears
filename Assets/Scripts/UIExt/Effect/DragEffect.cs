@@ -6,9 +6,9 @@ using UnityEngine.UI;
 namespace UIExt.Effect
 {
     /// <summary>
-    /// Guide drag effect - guides user to drag an element from start to end position
+    /// drag effect - guides user to drag an element from start to end position
     /// </summary>
-    public class GuideDragEffect : GuideEffectBase, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class DragEffect : EffectBase, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private enum EndpointType
         {
@@ -124,7 +124,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set start and end positions (Auto Follow). Equivalent to SetPositionsFollow.
         /// </summary>
-        public GuideDragEffect SetPositions(RectTransform start, RectTransform end)
+        public DragEffect SetPositions(RectTransform start, RectTransform end)
         {
             return SetPositionsFollow(start, end);
         }
@@ -132,7 +132,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set start and end screen positions in pixels.
         /// </summary>
-        public GuideDragEffect SetPositionsScreen(Vector2 startScreen, Vector2 endScreen)
+        public DragEffect SetPositionsScreen(Vector2 startScreen, Vector2 endScreen)
         {
             m_StartEndpoint = new DragEndpoint { Type = EndpointType.ScreenPoint, ScreenPos = startScreen };
             m_EndEndpoint = new DragEndpoint { Type = EndpointType.ScreenPoint, ScreenPos = endScreen };
@@ -142,7 +142,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set start and end world positions, will be projected to screen using camera.
         /// </summary>
-        public GuideDragEffect SetPositionsWorld(Vector3 startWorld, Vector3 endWorld, Camera camera = null)
+        public DragEffect SetPositionsWorld(Vector3 startWorld, Vector3 endWorld, Camera camera = null)
         {
             m_StartEndpoint = new DragEndpoint
                 { Type = EndpointType.WorldPosition, WorldPos = startWorld, WorldCamera = camera };
@@ -154,7 +154,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set start and end using RectTransform but sampled once when play (Static sampling).
         /// </summary>
-        public GuideDragEffect SetPositionsStatic(RectTransform start, RectTransform end)
+        public DragEffect SetPositionsStatic(RectTransform start, RectTransform end)
         {
             m_StartEndpoint = new DragEndpoint { Type = EndpointType.StaticRect, Rect = start };
             m_EndEndpoint = new DragEndpoint { Type = EndpointType.StaticRect, Rect = end };
@@ -164,7 +164,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set start and end using RectTransform and follow dynamically (Auto Follow).
         /// </summary>
-        public GuideDragEffect SetPositionsFollow(RectTransform start, RectTransform end)
+        public DragEffect SetPositionsFollow(RectTransform start, RectTransform end)
         {
             m_StartEndpoint = new DragEndpoint { Type = EndpointType.FollowRect, Rect = start };
             m_EndEndpoint = new DragEndpoint { Type = EndpointType.FollowRect, Rect = end };
@@ -174,7 +174,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set drag hint
         /// </summary>
-        public GuideDragEffect SetDragHint(RectTransform hint)
+        public DragEffect SetDragHint(RectTransform hint)
         {
             m_DragHint = hint;
             return this;
@@ -183,7 +183,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set hint animation settings
         /// </summary>
-        public GuideDragEffect SetHintAnimation(bool autoPlay, float duration = 1.5f, float loopDelay = 0.5f)
+        public DragEffect SetHintAnimation(bool autoPlay, float duration = 1.5f, float loopDelay = 0.5f)
         {
             m_AutoPlayHint = autoPlay;
             m_HintDuration = duration;
@@ -194,7 +194,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set complete threshold
         /// </summary>
-        public GuideDragEffect SetCompleteThreshold(float threshold)
+        public DragEffect SetCompleteThreshold(float threshold)
         {
             m_CompleteThreshold = threshold;
             return this;
@@ -203,19 +203,19 @@ namespace UIExt.Effect
         /// <summary>
         /// Set drag callbacks
         /// </summary>
-        public GuideDragEffect OnDragStart(Action onDragStart)
+        public DragEffect OnDragStart(Action onDragStart)
         {
             m_OnDragStart = onDragStart;
             return this;
         }
 
-        public GuideDragEffect OnDrag(Action<Vector2> onDrag)
+        public DragEffect OnDrag(Action<Vector2> onDrag)
         {
             m_OnDrag = onDrag;
             return this;
         }
 
-        public GuideDragEffect OnDragEnd(Action onDragEnd)
+        public DragEffect OnDragEnd(Action onDragEnd)
         {
             m_OnDragEnd = onDragEnd;
             return this;

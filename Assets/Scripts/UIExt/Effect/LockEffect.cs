@@ -6,11 +6,11 @@ using UnityEngine;
 namespace UIExt.Effect
 {
     /// <summary>
-    /// Guide lock effect - highlights and locks a UI element
+    /// lock effect - highlights and locks a UI element
     /// Supports mask, focus frame, and animation
     /// </summary>
     [RequireComponent(typeof(UIEventMask))]
-    public class GuideLockEffect : GuideEffectBase
+    public class LockEffect : EffectBase
     {
         [Header("Lock Settings")]
         [SerializeField]
@@ -48,7 +48,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set mask type
         /// </summary>
-        public GuideLockEffect SetMaskType(UIEventMask.MaskType maskType)
+        public LockEffect SetMaskType(UIEventMask.MaskType maskType)
         {
             m_MaskType = maskType;
             return this;
@@ -57,7 +57,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set whether target can be clicked
         /// </summary>
-        public GuideLockEffect SetAllowClick(bool allowClick)
+        public LockEffect SetAllowClick(bool allowClick)
         {
             m_AllowClick = allowClick;
             return this;
@@ -66,7 +66,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set focus frame
         /// </summary>
-        public GuideLockEffect SetFocusFrame(RectTransform focusFrame)
+        public LockEffect SetFocusFrame(RectTransform focusFrame)
         {
             m_FocusFrame = focusFrame;
             return this;
@@ -77,7 +77,7 @@ namespace UIExt.Effect
         /// </summary>
         /// <param name="focusFrame">Focus frame RectTransform</param>
         /// <param name="offset">Offset (x,y: center offset, z,w: width/height increase)</param>
-        public GuideLockEffect SetFocusFrame(RectTransform focusFrame, Vector4 offset)
+        public LockEffect SetFocusFrame(RectTransform focusFrame, Vector4 offset)
         {
             m_FocusFrame = focusFrame;
             m_FocusOffset = offset;
@@ -89,7 +89,7 @@ namespace UIExt.Effect
         /// </summary>
         /// <param name="centerOffset">Center position offset (x, y)</param>
         /// <param name="sizeIncrease">Size increase (width, height)</param>
-        public GuideLockEffect SetFocusFrameOffset(Vector2 centerOffset, Vector2 sizeIncrease)
+        public LockEffect SetFocusFrameOffset(Vector2 centerOffset, Vector2 sizeIncrease)
         {
             m_FocusOffset = new Vector4(centerOffset.x, centerOffset.y, sizeIncrease.x, sizeIncrease.y);
             return this;
@@ -102,7 +102,7 @@ namespace UIExt.Effect
         /// <param name="offsetY">Center Y offset</param>
         /// <param name="widthIncrease">Width increase</param>
         /// <param name="heightIncrease">Height increase</param>
-        public GuideLockEffect SetFocusFrameOffset(float offsetX, float offsetY, float widthIncrease,
+        public LockEffect SetFocusFrameOffset(float offsetX, float offsetY, float widthIncrease,
             float heightIncrease)
         {
             m_FocusOffset = new Vector4(offsetX, offsetY, widthIncrease, heightIncrease);
@@ -112,7 +112,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set focus animation
         /// </summary>
-        public GuideLockEffect SetFocusAnimation(IAnimation imageAnimation)
+        public LockEffect SetFocusAnimation(IAnimation imageAnimation)
         {
             m_FocusAnimation = imageAnimation;
             return this;
@@ -121,7 +121,7 @@ namespace UIExt.Effect
         /// <summary>
         /// Set target click callback
         /// </summary>
-        public GuideLockEffect OnTargetClick(Action<GameObject> onTargetClick)
+        public LockEffect OnTargetClick(Action<GameObject> onTargetClick)
         {
             m_OnTargetClick = onTargetClick;
             return this;

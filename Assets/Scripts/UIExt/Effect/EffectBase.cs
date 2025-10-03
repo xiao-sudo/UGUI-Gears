@@ -6,7 +6,7 @@ namespace UIExt.Effect
     /// <summary>
     /// Base class for guide effects
     /// </summary>
-    public abstract class GuideEffectBase : MonoBehaviour, IGuideEffect
+    public abstract class EffectBase : MonoBehaviour, IEffect
     {
         [SerializeField]
         protected RectTransform m_Target;
@@ -66,13 +66,13 @@ namespace UIExt.Effect
             OnResume();
         }
 
-        public IGuideEffect OnComplete(Action onComplete)
+        public IEffect OnComplete(Action onComplete)
         {
             m_OnComplete = onComplete;
             return this;
         }
 
-        public IGuideEffect OnCancel(Action onCancel)
+        public IEffect OnCancel(Action onCancel)
         {
             m_OnCancel = onCancel;
             return this;
