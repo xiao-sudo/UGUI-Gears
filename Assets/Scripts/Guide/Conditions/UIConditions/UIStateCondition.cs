@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace UIExt.Guide.Conditions.UIConditions
@@ -19,7 +18,6 @@ namespace UIExt.Guide.Conditions.UIConditions
             Visible, // Visible
             Enabled, // Enabled
             Selected, // Selected
-            Hovered // Mouse hovered
         }
 
         [SerializeField]
@@ -104,10 +102,6 @@ namespace UIExt.Guide.Conditions.UIConditions
                         m_Selectable = m_TargetObject.GetComponent<Selectable>();
                     return m_Selectable != null &&
                            m_Selectable.gameObject == EventSystem.current?.currentSelectedGameObject;
-
-                case UIStateType.Hovered:
-                    // This requires special handling through event system detection
-                    return false; // Temporarily return false, requires more complex implementation
 
                 default:
                     return false;
