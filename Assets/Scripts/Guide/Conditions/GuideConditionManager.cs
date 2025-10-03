@@ -117,6 +117,9 @@ namespace UIExt.Guide.Conditions
             // Subscribe to condition changes for auto cleanup
             condition.OnConditionChanged += OnConditionStateChanged;
 
+            // Start listening to the condition
+            condition.StartListening();
+
             // If condition needs periodic state checking, add to state check list
             if (ShouldCheckCondition(condition))
             {

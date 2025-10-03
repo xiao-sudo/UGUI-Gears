@@ -60,6 +60,7 @@ namespace UIExt.Guide.Conditions.UIConditions
             m_TargetObject = target;
             m_StateType = type;
             m_ExpectedValue = expected;
+            m_LastStateValue = false;
         }
 
         /// <summary>
@@ -96,19 +97,31 @@ namespace UIExt.Guide.Conditions.UIConditions
                     return m_Selectable != null && m_Selectable.interactable;
 
                 case UIStateType.Visible:
+                    // First check if the object is active in hierarchy (highest priority)
+                    if (!m_TargetObject.activeInHierarchy)
+                        return false;
+
+                    // Check if the object is enabled
+                    var visibleComponent = m_TargetObject.GetComponent<MonoBehaviour>();
+                    if (visibleComponent != null && !visibleComponent.enabled)
+                        return false;
+
+                    // Check CanvasGroup alpha and interactable state
                     var canvasGroup = m_TargetObject.GetComponent<CanvasGroup>();
                     if (canvasGroup != null)
                         return canvasGroup.alpha > 0.01f && canvasGroup.interactable;
 
+                    // Check Image alpha
                     var image = m_TargetObject.GetComponent<Image>();
                     if (image != null)
                         return image.color.a > 0.01f;
 
-                    return m_TargetObject.activeInHierarchy;
+                    // If no specific visibility components, consider it visible if active
+                    return true;
 
                 case UIStateType.Enabled:
-                    var component = m_TargetObject.GetComponent<MonoBehaviour>();
-                    return component != null && component.enabled;
+                    var enableComponent = m_TargetObject.GetComponent<MonoBehaviour>();
+                    return enableComponent != null && enableComponent.enabled;
 
                 case UIStateType.Selected:
                     if (m_Selectable == null)
@@ -126,23 +139,8 @@ namespace UIExt.Guide.Conditions.UIConditions
             if (m_TargetObject == null) return;
 
             m_Selectable = m_TargetObject.GetComponent<Selectable>();
-            m_LastStateValue = GetCurrentStateValue();
 
-            // For certain state types, special event listening is required
-            switch (m_StateType)
-            {
-                case UIStateType.ActiveInHierarchy:
-                    // Can be checked periodically through coroutines
-                    break;
-
-                case UIStateType.Interactable:
-                    // Listen to Selectable state changes
-                    break;
-
-                case UIStateType.Selected:
-                    // Listen to EventSystem selection state changes
-                    break;
-            }
+            CheckStateChange();
         }
 
         protected override void OnStopListening()
