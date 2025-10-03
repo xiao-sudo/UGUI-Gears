@@ -92,6 +92,10 @@ namespace UIExt.Guide.Conditions.UIConditions
                     return m_TargetObject.activeInHierarchy;
 
                 case UIStateType.Interactable:
+                    // First check if the object is active in hierarchy
+                    if (!m_TargetObject.activeInHierarchy)
+                        return false;
+
                     if (m_Selectable == null)
                         m_Selectable = m_TargetObject.GetComponent<Selectable>();
                     return m_Selectable != null && m_Selectable.interactable;
@@ -120,10 +124,18 @@ namespace UIExt.Guide.Conditions.UIConditions
                     return true;
 
                 case UIStateType.Enabled:
+                    // First check if the object is active in hierarchy
+                    if (!m_TargetObject.activeInHierarchy)
+                        return false;
+
                     var enableComponent = m_TargetObject.GetComponent<MonoBehaviour>();
                     return enableComponent != null && enableComponent.enabled;
 
                 case UIStateType.Selected:
+                    // First check if the object is active in hierarchy
+                    if (!m_TargetObject.activeInHierarchy)
+                        return false;
+
                     if (m_Selectable == null)
                         m_Selectable = m_TargetObject.GetComponent<Selectable>();
                     return m_Selectable != null &&
