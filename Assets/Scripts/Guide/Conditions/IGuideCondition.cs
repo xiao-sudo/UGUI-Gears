@@ -1,6 +1,6 @@
 using System;
 
-namespace UIExt.Guide.Conditions
+namespace Guide.Conditions
 {
     /// <summary>
     /// Condition cleanup strategy

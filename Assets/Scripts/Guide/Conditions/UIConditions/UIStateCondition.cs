@@ -1,9 +1,10 @@
 using System;
+using UIExt.Guide.Conditions;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace UIExt.Guide.Conditions.UIConditions
+namespace Guide.Conditions.UIConditions
 {
     /// <summary>
     /// UI state condition

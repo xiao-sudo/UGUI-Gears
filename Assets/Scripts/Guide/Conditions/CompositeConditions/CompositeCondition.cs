@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using UIExt.Guide.Conditions;
 using UnityEngine;
 
-namespace UIExt.Guide.Conditions.CompositeConditions
+namespace Guide.Conditions.CompositeConditions
 {
     /// <summary>
     /// Composite condition logic type

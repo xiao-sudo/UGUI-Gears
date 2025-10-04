@@ -1,7 +1,8 @@
 using System;
+using UIExt.Guide.Conditions;
 using UnityEngine;
 
-namespace UIExt.Guide.Conditions.EventConditions
+namespace Guide.Conditions.EventConditions
 {
     /// <summary>
     /// Game event condition
