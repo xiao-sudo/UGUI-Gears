@@ -1,8 +1,7 @@
 using System;
-using Guide.Conditions;
 using UnityEngine;
 
-namespace UIExt.Guide.Conditions
+namespace GameGuide.Conditions
 {
     /// <summary>
     /// Base class for guide conditions

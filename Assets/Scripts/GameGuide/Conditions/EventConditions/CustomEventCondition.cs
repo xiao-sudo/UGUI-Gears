@@ -1,9 +1,7 @@
 using System;
-using UIExt.Guide.Conditions;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-namespace Guide.Conditions.EventConditions
+namespace GameGuide.Conditions.EventConditions
 {
     /// <summary>
     /// Custom event condition

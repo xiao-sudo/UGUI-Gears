@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using UIExt.Guide.Conditions;
 using UnityEngine;
 
-namespace Guide.Conditions
+namespace GameGuide.Conditions
 {
     /// <summary>
     /// Guide condition manager

@@ -1,6 +1,6 @@
 using System;
 
-namespace Guide.Conditions
+namespace GameGuide.Conditions
 {
     /// <summary>
     /// Condition cleanup strategy
