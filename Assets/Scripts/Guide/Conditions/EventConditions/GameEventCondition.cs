@@ -1,8 +1,9 @@
 using System;
+using UIExt.Guide.Conditions;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace UIExt.Guide.Conditions.EventConditions
+namespace Guide.Conditions.EventConditions
 {
     /// <summary>
     /// Game event condition
