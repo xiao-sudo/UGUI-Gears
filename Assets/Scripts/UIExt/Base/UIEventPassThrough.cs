@@ -93,7 +93,7 @@ namespace UIExt.Base
             var executeTarget = PassEvent(eventData, ExecuteEvents.pointerClickHandler);
 
             if (executeTarget.Executed)
-                m_PassThroughClickCallback.Invoke(executeTarget.Target);
+                m_PassThroughClickCallback?.Invoke(executeTarget.Target);
         }
 
         public void OnPointerDown(PointerEventData eventData)
