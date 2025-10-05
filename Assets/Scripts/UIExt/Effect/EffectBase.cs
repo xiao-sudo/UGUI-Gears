@@ -94,13 +94,13 @@ namespace UIExt.Effect
         {
         }
 
-        protected void InvokeComplete()
+        protected virtual void InvokeComplete()
         {
             m_IsPlaying = false;
             m_OnComplete?.Invoke();
         }
 
-        protected void InvokeCancel()
+        protected virtual void InvokeCancel()
         {
             m_IsPlaying = false;
             m_OnCancel?.Invoke();

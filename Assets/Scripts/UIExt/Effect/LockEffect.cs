@@ -1,6 +1,5 @@
 using System;
 using UIExt.Base;
-using UIExt.ImageAnimation;
 using UnityEngine;
 
 namespace UIExt.Effect
