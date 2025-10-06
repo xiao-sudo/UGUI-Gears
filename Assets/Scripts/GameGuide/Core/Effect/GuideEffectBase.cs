@@ -4,18 +4,18 @@ using UIExt.Effect;
 namespace GameGuide.Core.Effect
 {
     /// <summary>
-    /// 引导效果基类
+    /// Base class for guide effects
     /// </summary>
     public abstract class GuideEffectBase : EffectBase, IGuideEffect, IResettableEffect
     {
-        #region 引导专用字段
+        #region Guide-specific Fields
 
         private IGuideItem m_GuideItem;
         private bool m_IsGuideActive = false;
 
         #endregion
 
-        #region 引导专用事件
+        #region Guide-specific Events
 
         public event Action<IGuideEffect> OnGuideEffectCompleted;
         public event Action<IGuideEffect> OnGuideEffectStarted;
@@ -23,7 +23,7 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region 引导专用属性
+        #region Guide-specific Properties
 
         public bool IsGuideActive => m_IsGuideActive;
 
@@ -31,10 +31,10 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region 引导专用方法
+        #region Guide-specific Methods
 
         /// <summary>
-        /// 设置引导项引用
+        /// Set the guide item reference
         /// </summary>
         public void SetGuideItem(IGuideItem guideItem)
         {
@@ -42,7 +42,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 重置效果状态
+        /// Reset effect state
         /// </summary>
         public virtual void Reset()
         {
@@ -53,7 +53,7 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region 重写基类方法
+        #region Overrides
 
         public override void Play()
         {
@@ -93,14 +93,14 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region 虚方法（供子类重写）
+        #region Virtual Methods (for subclasses)
 
         /// <summary>
-        /// 重置时的处理
+        /// Handle reset
         /// </summary>
         protected virtual void OnReset()
         {
-            // 子类可以重写此方法来实现自定义重置逻辑
+            // Subclasses can override to implement custom reset logic
         }
 
         #endregion

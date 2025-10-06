@@ -5,11 +5,11 @@ using UnityEngine;
 namespace GameGuide.Core.Effect
 {
     /// <summary>
-    /// 引导拖拽效果 - 基于DragEffect实现
+    /// Guide drag effect - built on top of DragEffect
     /// </summary>
     public class GuideDragEffect : GuideEffectBase
     {
-        #region 私有字段
+        #region Private Fields
         
         private DragEffect m_DragEffect;
         private Action<Vector2, Vector2> m_OnDragComplete;
@@ -19,7 +19,7 @@ namespace GameGuide.Core.Effect
         
         #endregion
 
-        #region 属性
+        #region Properties
         
         private DragEffect DragEffect
         {
@@ -39,10 +39,10 @@ namespace GameGuide.Core.Effect
         
         #endregion
 
-        #region 配置方法（链式调用）
+        #region Configuration Methods (Fluent)
         
         /// <summary>
-        /// 设置拖拽位置
+        /// Set drag positions
         /// </summary>
         public GuideDragEffect SetPositions(RectTransform startPos, RectTransform endPos)
         {
@@ -52,47 +52,47 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置完成阈值
+        /// Set completion threshold
         /// </summary>
         public GuideDragEffect SetCompleteThreshold(float threshold)
         {
-            // 注意：DragEffect的阈值设置可能需要通过其他方式实现
-            // 这里先保留接口，具体实现可能需要根据DragEffect的API调整
+            // Note: DragEffect threshold configuration may need other APIs.
+            // Keeping the interface; implementation depends on DragEffect API.
             return this;
         }
 
         /// <summary>
-        /// 设置拖拽提示
+        /// Set drag hint
         /// </summary>
         public GuideDragEffect SetDragHint(RectTransform dragHint)
         {
-            // 注意：DragEffect的提示设置可能需要通过其他方式实现
-            // 这里先保留接口，具体实现可能需要根据DragEffect的API调整
+            // Note: DragEffect hint configuration may need other APIs.
+            // Keeping the interface; implementation depends on DragEffect API.
             return this;
         }
 
         /// <summary>
-        /// 设置提示动画
+        /// Set hint animation
         /// </summary>
         public GuideDragEffect SetHintAnimation(bool autoPlay, float duration, float loopDelay)
         {
-            // 注意：DragEffect的动画设置可能需要通过其他方式实现
-            // 这里先保留接口，具体实现可能需要根据DragEffect的API调整
+            // Note: DragEffect animation configuration may need other APIs.
+            // Keeping the interface; implementation depends on DragEffect API.
             return this;
         }
 
         /// <summary>
-        /// 设置轨迹显示
+        /// Set trajectory display
         /// </summary>
         public GuideDragEffect SetShowTrajectory(bool show, LineRenderer lineRenderer = null)
         {
-            // 注意：DragEffect的轨迹设置可能需要通过其他方式实现
-            // 这里先保留接口，具体实现可能需要根据DragEffect的API调整
+            // Note: DragEffect trajectory configuration may need other APIs.
+            // Keeping the interface; implementation depends on DragEffect API.
             return this;
         }
 
         /// <summary>
-        /// 设置拖拽开始回调
+        /// Set drag start callback
         /// </summary>
         public GuideDragEffect OnDragStart(Action<Vector2, Vector2> onDragStart)
         {
@@ -101,7 +101,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置拖拽完成回调
+        /// Set drag complete callback
         /// </summary>
         public GuideDragEffect OnDragComplete(Action<Vector2, Vector2> onDragComplete)
         {
@@ -111,7 +111,7 @@ namespace GameGuide.Core.Effect
         
         #endregion
 
-        #region 重写基类方法
+        #region Overrides
         
         protected override void OnPlay()
         {
@@ -123,16 +123,16 @@ namespace GameGuide.Core.Effect
                 return;
             }
 
-            // 设置DragEffect的目标（使用起始位置作为目标）
+            // Set DragEffect target (use start position as target)
             DragEffect.Target = m_StartPosition;
 
-            // 设置拖拽位置（需要根据DragEffect的实际API调整）
+            // Set drag positions (adjust according to DragEffect's API)
             // DragEffect.SetPositions(m_StartPosition, m_EndPosition);
 
-            // 设置完成回调
+            // Set completion callback
             DragEffect.OnComplete(OnDragEffectComplete);
 
-            // 播放DragEffect
+            // Play DragEffect
             DragEffect.Play();
         }
 
@@ -140,7 +140,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnStop();
 
-            // 停止DragEffect
+            // Stop DragEffect
             DragEffect.Stop();
         }
 
@@ -148,7 +148,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnPause();
 
-            // 暂停DragEffect
+            // Pause DragEffect
             DragEffect.Pause();
         }
 
@@ -156,7 +156,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnResume();
 
-            // 恢复DragEffect
+            // Resume DragEffect
             DragEffect.Resume();
         }
 
@@ -164,20 +164,20 @@ namespace GameGuide.Core.Effect
         {
             base.OnReset();
             
-            // 重置DragEffect
+            // Reset DragEffect
             DragEffect.Stop();
         }
         
         #endregion
 
-        #region 事件处理
+        #region Event Handling
 
         /// <summary>
-        /// DragEffect完成回调
+        /// DragEffect completed callback
         /// </summary>
         private void OnDragEffectComplete()
         {
-            // 调用用户设置的回调
+            // Invoke user callback
             if (m_StartPosition != null && m_EndPosition != null)
             {
                 var startPos = RectTransformUtility.WorldToScreenPoint(null, m_StartPosition.position);
@@ -185,7 +185,7 @@ namespace GameGuide.Core.Effect
                 m_OnDragComplete?.Invoke(startPos, endPos);
             }
 
-            // 自动完成引导效果
+            // Auto-complete the guide effect
             InvokeComplete();
         }
         

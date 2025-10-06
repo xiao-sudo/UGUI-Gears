@@ -44,6 +44,19 @@ namespace UIExt.Effect
             }
         }
 
+        public RectTransform FocusFrame
+        {
+            get
+            {
+                if (null == m_FocusFrame)
+                {
+                    m_FocusFrame = m_Target.GetComponent<RectTransform>();
+                }
+
+                return m_FocusFrame;
+            }
+        }
+
         /// <summary>
         /// Set mask type
         /// </summary>
@@ -140,17 +153,14 @@ namespace UIExt.Effect
             EventMask.PassThroughClickCallback = OnMaskTargetClick;
 
             // Setup focus frame
-            if (m_FocusFrame != null)
-            {
-                m_FocusFrame.gameObject.SetActive(true);
-                Utility.UIRect.SetTargetRectBySource(m_FocusFrame, m_Target, m_FocusOffset);
+            FocusFrame.gameObject.SetActive(true);
+            Utility.UIRect.SetTargetRectBySource(FocusFrame, m_Target, m_FocusOffset);
 
-                // Play animation if exists
-                if (m_FocusAnimation != null)
-                {
-                    m_FocusAnimation.Initialize();
-                    m_FocusAnimation.Play();
-                }
+            // Play animation if exists
+            if (m_FocusAnimation != null)
+            {
+                m_FocusAnimation.Initialize();
+                m_FocusAnimation.Play();
             }
 
             gameObject.SetActive(true);

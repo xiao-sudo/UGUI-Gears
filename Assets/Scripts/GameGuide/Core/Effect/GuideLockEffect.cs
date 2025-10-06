@@ -6,19 +6,19 @@ using UnityEngine;
 namespace GameGuide.Core.Effect
 {
     /// <summary>
-    /// 引导锁定效果 - 基于LockEffect实现
+    /// Guide lock effect - built on top of LockEffect
     /// </summary>
     [RequireComponent(typeof(UIEventMask))]
     public class GuideLockEffect : GuideEffectBase
     {
-        #region 私有字段
+        #region Private Fields
         
         private LockEffect m_LockEffect;
         private Action<GameObject> m_OnTargetClick;
         
         #endregion
 
-        #region 属性
+        #region Properties
         
         private LockEffect LockEffect
         {
@@ -38,10 +38,10 @@ namespace GameGuide.Core.Effect
         
         #endregion
 
-        #region 配置方法（链式调用）
+        #region Configuration Methods (Fluent)
 
         /// <summary>
-        /// 设置遮罩类型
+        /// Set mask type
         /// </summary>
         public GuideLockEffect SetMaskType(UIEventMask.MaskType maskType)
         {
@@ -50,7 +50,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置是否允许点击
+        /// Set whether clicking is allowed
         /// </summary>
         public GuideLockEffect SetAllowClick(bool allowClick)
         {
@@ -59,7 +59,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置聚焦框
+        /// Set focus frame
         /// </summary>
         public GuideLockEffect SetFocusFrame(RectTransform focusFrame)
         {
@@ -68,7 +68,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置聚焦框偏移
+        /// Set focus frame offset
         /// </summary>
         public GuideLockEffect SetFocusFrameOffset(Vector2 centerOffset, Vector2 sizeIncrease)
         {
@@ -77,7 +77,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置聚焦框偏移
+        /// Set focus frame offset
         /// </summary>
         public GuideLockEffect SetFocusFrameOffset(float offsetX, float offsetY, float widthIncrease, float heightIncrease)
         {
@@ -86,7 +86,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置聚焦动画
+        /// Set focus animation
         /// </summary>
         public GuideLockEffect SetFocusAnimation(IAnimation imageAnimation)
         {
@@ -95,7 +95,7 @@ namespace GameGuide.Core.Effect
         }
 
         /// <summary>
-        /// 设置目标点击回调
+        /// Set target click callback
         /// </summary>
         public GuideLockEffect OnTargetClick(Action<GameObject> onTargetClick)
         {
@@ -105,7 +105,7 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region 重写基类方法
+        #region Overrides
 
         protected override void OnPlay()
         {
@@ -117,13 +117,13 @@ namespace GameGuide.Core.Effect
                 return;
             }
 
-            // 设置LockEffect的目标
+            // Set LockEffect target
             LockEffect.Target = m_Target;
 
-            // 设置点击回调
+            // Set click callback
             LockEffect.OnTargetClick(OnLockEffectTargetClick);
 
-            // 播放LockEffect
+            // Play LockEffect
             LockEffect.Play();
         }
 
@@ -131,7 +131,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnStop();
 
-            // 停止LockEffect
+            // Stop LockEffect
             LockEffect.Stop();
         }
 
@@ -139,7 +139,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnPause();
 
-            // 暂停LockEffect
+            // Pause LockEffect
             LockEffect.Pause();
         }
 
@@ -147,7 +147,7 @@ namespace GameGuide.Core.Effect
         {
             base.OnResume();
 
-            // 恢复LockEffect
+            // Resume LockEffect
             LockEffect.Resume();
         }
 
@@ -155,23 +155,23 @@ namespace GameGuide.Core.Effect
         {
             base.OnReset();
             
-            // 重置LockEffect
+            // Reset LockEffect
             LockEffect.Stop();
         }
 
         #endregion
 
-        #region 事件处理
+        #region Event Handling
 
         /// <summary>
-        /// LockEffect目标点击回调
+        /// LockEffect target clicked callback
         /// </summary>
         private void OnLockEffectTargetClick(GameObject clickedObject)
         {
-            // 调用用户设置的回调
+            // Invoke user callback
             m_OnTargetClick?.Invoke(clickedObject);
 
-            // 自动完成引导效果
+            // Auto-complete guide effect
             InvokeComplete();
         }
 

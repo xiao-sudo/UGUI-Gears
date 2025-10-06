@@ -4,26 +4,26 @@ using System.Collections.Generic;
 namespace GameGuide.Core
 {
     /// <summary>
-    /// 引导组接口
+    /// Guide group interface
     /// </summary>
     public interface IGuideGroup
     {
-        // 基础属性
+        // Basic properties
         string GroupId { get; }
         string GroupName { get; }
         GuideGroupState State { get; }
 
-        // 引导项管理
+        // Guide item management
         List<IGuideItem> GuideItems { get; }
         IGuideItem CurrentItem { get; }
         int CurrentItemIndex { get; }
 
-        // 状态查询
+        // State queries
         bool IsRunning { get; }
         bool IsCompleted { get; }
         bool IsPaused { get; }
 
-        // 执行控制
+        // Execution control
         void StartGroup();
         void PauseGroup();
         void ResumeGroup();
@@ -31,7 +31,7 @@ namespace GameGuide.Core
         void FailGroup();
         void ResetGroup();
 
-        // 引导项管理
+        // Guide item management
         void AddGuideItem(IGuideItem item);
         void RemoveGuideItem(string itemId);
         void ClearGuideItems();
@@ -41,7 +41,7 @@ namespace GameGuide.Core
 
         void Update();
 
-        // 事件回调
+        // Event callbacks
         event Action<IGuideGroup> OnGroupStarted;
         event Action<IGuideGroup> OnGroupCompleted;
         event Action<IGuideGroup> OnGroupPaused;

@@ -5,36 +5,36 @@ using UIExt.Effect;
 namespace GameGuide.Core
 {
     /// <summary>
-    /// 引导项接口
+    /// Guide item interface
     /// </summary>
     public interface IGuideItem
     {
-        // 基础属性
+        // Basic properties
         string ItemId { get; }
         string Description { get; }
         GuideItemPriority Priority { get; }
         GuideItemState State { get; }
         
-        // 条件系统
+        // Condition system
         IGuideCondition TriggerCondition { get; }
         IGuideCondition CompletionCondition { get; }
         
-        // 效果系统
+        // Effect system
         IGuideEffect GuideEffect { get; }
         
-        // 时间管理
+        // Time management
         float StartTime { get; }
         float Duration { get; }
         float RunningTimeoutSeconds { get; }
         
-        // 状态查询
+        // State queries
         bool IsActive { get; }
         bool IsCompleted { get; }
         bool IsWaiting { get; }
         
-        // 生命周期控制
+        // Lifecycle control
         void Initialize();
-        // 进入等待态（由 GuideGroup 切换到该项时调用，不直接运行）
+        // Enter Waiting (called when GuideGroup switches to this item; does not run immediately)
         void Enter();
         void StartItem();
         void CompleteItem();
@@ -42,14 +42,14 @@ namespace GameGuide.Core
         void ResetItem();
         void Dispose();
         
-        // 效果控制
+        // Effect control
         void PauseEffect();
         void ResumeEffect();
         
-        // 更新方法（由外部调用）
+        // Update method (called externally)
         void Update();
         
-        // 事件回调
+        // Event callbacks
         event Action<IGuideItem> OnItemStarted;
         event Action<IGuideItem> OnItemCompleted;
         event Action<IGuideItem> OnItemCancelled;

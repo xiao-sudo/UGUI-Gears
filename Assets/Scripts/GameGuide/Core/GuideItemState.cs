@@ -1,20 +1,20 @@
 namespace GameGuide.Core
 {
     /// <summary>
-    /// 引导项状态枚举
+    /// Guide item state enum
     /// </summary>
     public enum GuideItemState
     {
-        Inactive,       // 未激活
-        Waiting,        // 等待触发条件满足
-        Active,         // 激活中，效果正在播放
-        Completed,      // 已完成
-        Cancelled,      // 已取消
-        Failed          // 执行失败
+        Inactive,       // Not active
+        Waiting,        // Waiting for trigger condition
+        Active,         // Active, effect is playing
+        Completed,      // Completed
+        Cancelled,      // Cancelled
+        Failed          // Failed to execute
     }
 
     /// <summary>
-    /// 引导项优先级
+    /// Guide item priority
     /// </summary>
     public enum GuideItemPriority
     {
@@ -25,16 +25,16 @@ namespace GameGuide.Core
     }
 
     /// <summary>
-    /// 引导组状态枚举
+    /// Guide group state enum
     /// </summary>
     public enum GuideGroupState
     {
-        Inactive,       // 未激活
-        Waiting,        // 等待执行
-        Running,        // 运行中
-        Paused,         // 已暂停
-        Completed,      // 已完成（正常结束）
-        Cancelled,      // 已取消（用户主动取消）
-        Failed          // 执行失败（异常结束）
+        Inactive,       // Not active
+        Waiting,        // Waiting to run
+        Running,        // Running
+        Paused,         // Paused
+        Completed,      // Completed (normal finish)
+        Cancelled,      // Cancelled (user cancelled)
+        Failed          // Failed (abnormal finish)
     }
 }

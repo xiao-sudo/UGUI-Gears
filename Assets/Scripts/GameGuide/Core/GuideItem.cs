@@ -8,12 +8,12 @@ using UnityEngine.Serialization;
 namespace GameGuide.Core
 {
     /// <summary>
-    /// 引导项实现类 - 纯C#类，不继承MonoBehaviour
+    /// Guide item implementation - pure C# class, not inheriting from MonoBehaviour
     /// </summary>
     [Serializable]
     public class GuideItem : IGuideItem
     {
-        #region 序列化字段
+        #region Serialized Fields
 
         [SerializeField]
         private string m_ItemId;
@@ -24,12 +24,12 @@ namespace GameGuide.Core
         [SerializeField]
         private GuideItemPriority m_Priority = GuideItemPriority.Normal;
 
-        // 超时配置：等待期与执行期分别配置
+        // Timeout configuration: waiting phase and running phase configured separately
         [SerializeField]
-        private float m_WaitingTimeoutSeconds = 0f; // 0 表示不启用等待期超时
+        private float m_WaitingTimeoutSeconds = 0f; // 0 means waiting timeout is disabled
 
         [SerializeField]
-        private float m_RunningTimeoutSeconds = 30f; // 保持兼容：作为执行期超时（Running）
+        private float m_RunningTimeoutSeconds = 30f; // Backward compatibility: as running timeout
 
         [SerializeField]
         private bool m_AutoStart = true;
@@ -39,7 +39,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 私有字段
+        #region Private Fields
 
         private GuideItemState m_State = GuideItemState.Inactive;
         private float m_StartTime = 0f;
@@ -54,7 +54,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 公共属性
+        #region Public Properties
 
         public string ItemId => m_ItemId;
         public string Description => m_Description;
@@ -77,7 +77,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 事件
+        #region Events
 
         public event Action<IGuideItem> OnItemStarted;
         public event Action<IGuideItem> OnItemCompleted;
@@ -87,7 +87,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 构造函数
+        #region Constructors
 
         public GuideItem()
         {
@@ -103,10 +103,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 配置方法（链式调用）
+        #region Configuration Methods (Fluent)
 
         /// <summary>
-        /// 设置引导项ID
+        /// Set guide item ID
         /// </summary>
         public GuideItem SetItemId(string itemId)
         {
@@ -115,7 +115,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置描述
+        /// Set description
         /// </summary>
         public GuideItem SetDescription(string description)
         {
@@ -124,7 +124,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置优先级
+        /// Set priority
         /// </summary>
         public GuideItem SetPriority(GuideItemPriority priority)
         {
@@ -133,7 +133,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置超时时间
+        /// Set timeout
         /// </summary>
         public GuideItem SetTimeout(float timeoutSeconds)
         {
@@ -142,7 +142,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置等待期超时（Waiting）
+        /// Set waiting timeout (Waiting)
         /// </summary>
         public GuideItem SetWaitingTimeout(float timeoutSeconds)
         {
@@ -151,7 +151,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置执行期超时（Running）
+        /// Set running timeout (Running)
         /// </summary>
         public GuideItem SetRunningTimeout(float timeoutSeconds)
         {
@@ -160,7 +160,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否自动开始
+        /// Set whether to auto start
         /// </summary>
         public GuideItem SetAutoStart(bool autoStart)
         {
@@ -169,7 +169,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否自动完成
+        /// Set whether to auto complete
         /// </summary>
         public GuideItem SetAutoComplete(bool autoComplete)
         {
@@ -178,7 +178,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置触发条件
+        /// Set trigger condition
         /// </summary>
         public GuideItem SetTriggerCondition(IGuideCondition condition)
         {
@@ -198,7 +198,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置完成条件
+        /// Set completion condition
         /// </summary>
         public GuideItem SetCompletionCondition(IGuideCondition condition)
         {
@@ -218,7 +218,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置引导效果
+        /// Set guide effect
         /// </summary>
         public GuideItem SetGuideEffect(IGuideEffect effect)
         {
@@ -239,22 +239,22 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 生命周期控制
+        #region Lifecycle Control
 
         /// <summary>
-        /// 初始化引导项
+        /// Initialize guide item
         /// </summary>
         public void Initialize()
         {
             if (m_IsInitialized) return;
 
-            // 注册条件到管理器
+            // Register conditions to manager
             RegisterConditions();
 
-            // 初始化效果（但不播放）
+            // Initialize effect (do not play)
             InitializeEffect();
 
-            // 设置初始状态（保持 Inactive，不自动进入 Waiting）
+            // Set initial state (keep Inactive, do not auto-enter Waiting)
             m_IsInitialized = true;
             SetState(GuideItemState.Inactive);
 
@@ -262,7 +262,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 进入等待态：开始监听触发条件并做一次立即检查
+        /// Enter Waiting: start listening to trigger condition and check immediately once
         /// </summary>
         public void Enter()
         {
@@ -271,7 +271,7 @@ namespace GameGuide.Core
                 Initialize();
             }
 
-            // 仅允许从 Inactive 或 Reset 后进入 Waiting
+            // Only allow entering Waiting from Inactive or after Reset
             if (m_State != GuideItemState.Inactive && m_State != GuideItemState.Waiting)
             {
                 Debug.LogWarning($"[GuideItem] Cannot enter waiting from state {m_State} for item {ItemId}");
@@ -280,10 +280,10 @@ namespace GameGuide.Core
 
             SetState(GuideItemState.Waiting);
 
-            // 开始等待计时（用于 Waiting 期超时）
+            // Start waiting timer (for Waiting timeout)
             m_WaitingStartTime = Time.time;
 
-            // 立即检查触发条件，避免错过已满足的情况
+            // Immediately check trigger condition to avoid missing an already satisfied case
             if (m_TriggerCondition != null)
             {
                 if (m_TriggerCondition.IsSatisfied() && m_AutoStart)
@@ -294,7 +294,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 开始引导项
+        /// Start the guide item
         /// </summary>
         public void StartItem()
         {
@@ -304,24 +304,24 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 记录开始时间
+            // Record start time
             m_StartTime = Time.time;
             m_RunningStartTime = Time.time;
 
-            // 更新状态
+            // Update state
             SetState(GuideItemState.Active);
 
-            // 播放引导效果
+            // Play guide effect
             StartEffect();
 
-            // 触发开始事件
+            // Raise started event
             OnItemStarted?.Invoke(this);
 
             Debug.Log($"[GuideItem] Started: {ItemId}");
         }
 
         /// <summary>
-        /// 完成引导项
+        /// Complete the guide item
         /// </summary>
         public void CompleteItem()
         {
@@ -331,23 +331,23 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 记录持续时间
+            // Record duration
             m_Duration = Time.time - m_StartTime;
 
-            // 停止引导效果
+            // Stop guide effect
             StopEffect();
 
-            // 更新状态
+            // Update state
             SetState(GuideItemState.Completed);
 
-            // 触发完成事件
+            // Raise completed event
             OnItemCompleted?.Invoke(this);
 
             Debug.Log($"[GuideItem] Completed: {ItemId} (Duration: {m_Duration:F2}s)");
         }
 
         /// <summary>
-        /// 取消引导项
+        /// Cancel the guide item
         /// </summary>
         public void CancelItem()
         {
@@ -356,36 +356,36 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 停止引导效果
+            // Stop guide effect
             StopEffect();
 
-            // 更新状态
+            // Update state
             SetState(GuideItemState.Cancelled);
 
-            // 触发取消事件
+            // Raise cancelled event
             OnItemCancelled?.Invoke(this);
 
             Debug.Log($"[GuideItem] Cancelled: {ItemId}");
         }
 
         /// <summary>
-        /// 重置引导项
+        /// Reset the guide item
         /// </summary>
         public void ResetItem()
         {
-            // 先取消当前状态
+            // Cancel current state first
             CancelItem();
 
-            // 重置时间记录
+            // Reset time records
             m_StartTime = 0f;
             m_Duration = 0f;
             m_RunningStartTime = 0f;
             m_WaitingStartTime = 0f;
 
-            // 重置效果状态
+            // Reset effect state
             ResetEffect();
 
-            // 重置为未激活，等待 GuideGroup 调用 Enter()
+            // Reset to Inactive; wait for GuideGroup to call Enter()
             SetState(GuideItemState.Inactive);
 
             Debug.Log($"[GuideItem] Reset: {ItemId}");
@@ -393,14 +393,14 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 更新方法（由外部调用）
+        #region Update Methods (called externally)
 
         /// <summary>
-        /// 更新引导项（由GuideManager调用）
+        /// Update the guide item (called by GuideManager)
         /// </summary>
         public void Update()
         {
-            // 仅处理 Waiting/Active 的超时
+            // Only handle timeouts in Waiting/Active
             if (m_State == GuideItemState.Waiting || m_State == GuideItemState.Active)
             {
                 UpdateTimeout();
@@ -408,7 +408,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 更新超时检查
+        /// Update timeout checks
         /// </summary>
         private void UpdateTimeout()
         {
@@ -433,23 +433,23 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 效果生命周期管理
+        #region Effect Lifecycle Management
 
         /// <summary>
-        /// 初始化效果（不播放）
+        /// Initialize effect (do not play)
         /// </summary>
         private void InitializeEffect()
         {
             if (m_GuideEffect == null) return;
 
-            // 订阅效果完成事件
+            // Subscribe to effect completed event
             m_GuideEffect.OnGuideEffectCompleted += OnGuideEffectCompleted;
 
             Debug.Log($"[GuideItem] Effect initialized: {ItemId}");
         }
 
         /// <summary>
-        /// 开始播放效果
+        /// Start playing effect
         /// </summary>
         private void StartEffect()
         {
@@ -467,7 +467,7 @@ namespace GameGuide.Core
 
             try
             {
-                // 播放效果
+                // Play effect
                 m_GuideEffect.Play();
                 m_EffectIsPlaying = true;
 
@@ -481,7 +481,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 停止播放效果
+        /// Stop playing effect
         /// </summary>
         private void StopEffect()
         {
@@ -492,7 +492,7 @@ namespace GameGuide.Core
 
             try
             {
-                // 停止效果
+                // Stop effect
                 m_GuideEffect.Stop();
                 m_EffectIsPlaying = false;
 
@@ -505,7 +505,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 暂停效果
+        /// Pause effect
         /// </summary>
         public void PauseEffect()
         {
@@ -526,7 +526,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 恢复效果
+        /// Resume effect
         /// </summary>
         public void ResumeEffect()
         {
@@ -547,7 +547,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 重置效果状态
+        /// Reset effect state
         /// </summary>
         private void ResetEffect()
         {
@@ -555,11 +555,11 @@ namespace GameGuide.Core
 
             try
             {
-                // 停止效果
+                // Stop effect
                 m_GuideEffect.Stop();
                 m_EffectIsPlaying = false;
 
-                // 重置效果状态（如果效果支持重置）
+                // Reset effect state (if the effect supports resetting)
                 if (m_GuideEffect is IResettableEffect resettableEffect)
                 {
                     resettableEffect.Reset();
@@ -575,10 +575,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 效果事件处理
+        #region Effect Event Handling
 
         /// <summary>
-        /// 效果完成回调
+        /// Effect completed callback
         /// </summary>
         private void OnGuideEffectCompleted(IGuideEffect effect)
         {
@@ -586,7 +586,7 @@ namespace GameGuide.Core
 
             m_EffectIsPlaying = false;
 
-            // 如果启用了自动完成，则完成引导项
+            // If auto-complete is enabled, complete the item
             if (m_AutoComplete && m_State == GuideItemState.Active)
             {
                 CompleteItem();
@@ -597,10 +597,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 条件事件处理
+        #region Condition Event Handling
 
         /// <summary>
-        /// 触发条件变化回调
+        /// Trigger condition changed callback
         /// </summary>
         private void OnTriggerConditionChanged(IGuideCondition condition)
         {
@@ -611,7 +611,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 完成条件变化回调
+        /// Completion condition changed callback
         /// </summary>
         private void OnCompletionConditionChanged(IGuideCondition condition)
         {
@@ -623,16 +623,16 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 超时管理
+        #region Timeout Management
 
         /// <summary>
-        /// 超时处理
+        /// Timeout handling
         /// </summary>
         private void OnWaitingTimeout()
         {
             Debug.LogWarning($"[GuideItem] Waiting timeout: {ItemId}");
 
-            // 等待期超时通常认为当前步骤无法开始 → 失败
+            // Waiting timeout usually means the step can't start → Fail
             StopEffect();
             SetState(GuideItemState.Failed);
             OnItemFailed?.Invoke(this);
@@ -642,7 +642,7 @@ namespace GameGuide.Core
         {
             Debug.LogWarning($"[GuideItem] Running timeout: {ItemId}");
 
-            // 执行期超时 → 失败
+            // Running timeout → Fail
             StopEffect();
             SetState(GuideItemState.Failed);
             OnItemFailed?.Invoke(this);
@@ -650,10 +650,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 条件管理
+        #region Condition Management
 
         /// <summary>
-        /// 注册条件
+        /// Register conditions
         /// </summary>
         private void RegisterConditions()
         {
@@ -669,7 +669,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 注销条件
+        /// Unregister conditions
         /// </summary>
         private void UnregisterConditions()
         {
@@ -686,10 +686,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 状态管理
+        #region State Management
 
         /// <summary>
-        /// 设置状态
+        /// Set state
         /// </summary>
         private void SetState(GuideItemState newState)
         {
@@ -698,7 +698,7 @@ namespace GameGuide.Core
             var oldState = m_State;
             m_State = newState;
 
-            // 触发状态变化事件
+            // Raise state changed event
             OnStateChanged?.Invoke(this);
 
             Debug.Log($"[GuideItem] State changed: {ItemId} {oldState} -> {newState}");
@@ -706,27 +706,27 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 清理和销毁
+        #region Cleanup and Disposal
 
         /// <summary>
-        /// 清理资源
+        /// Cleanup resources
         /// </summary>
         public void Dispose()
         {
-            // 停止效果
+            // Stop effect
             StopEffect();
 
-            // 取消事件订阅
+            // Unsubscribe from events
             UnsubscribeFromEvents();
 
-            // 注销条件
+            // Unregister conditions
             UnregisterConditions();
 
             Debug.Log($"[GuideItem] Disposed: {ItemId}");
         }
 
         /// <summary>
-        /// 取消事件订阅
+        /// Unsubscribe from events
         /// </summary>
         private void UnsubscribeFromEvents()
         {
@@ -748,7 +748,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 重写方法
+        #region Overrides
 
         public override string ToString()
         {

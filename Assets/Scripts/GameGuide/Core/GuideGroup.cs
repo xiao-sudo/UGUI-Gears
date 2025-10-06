@@ -7,12 +7,12 @@ using GameGuide.Conditions;
 namespace GameGuide.Core
 {
     /// <summary>
-    /// 引导组实现类 - 纯C#类，不继承MonoBehaviour
+    /// Guide group implementation - pure C# class, not inheriting from MonoBehaviour
     /// </summary>
     [Serializable]
     public class GuideGroup : IGuideGroup
     {
-        #region 序列化字段
+        #region Serialized Fields
 
         [SerializeField]
         private string m_GroupId;
@@ -37,7 +37,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 私有字段
+        #region Private Fields
 
         private GuideGroupState m_State = GuideGroupState.Inactive;
         private List<IGuideItem> m_Items = new();
@@ -49,7 +49,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 公共属性
+        #region Public Properties
 
         public string GroupId => m_GroupId;
         public string GroupName => m_GroupName;
@@ -73,7 +73,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 事件
+        #region Events
 
         public void ClearGuideItems()
         {
@@ -91,7 +91,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 构造函数
+        #region Constructors
 
         public GuideGroup()
         {
@@ -109,10 +109,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 配置方法（链式调用）
+        #region Configuration Methods (Fluent)
 
         /// <summary>
-        /// 设置组ID
+        /// Set group ID
         /// </summary>
         public GuideGroup SetGroupId(string groupId)
         {
@@ -121,7 +121,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置组名称
+        /// Set group name
         /// </summary>
         public GuideGroup SetGroupName(string groupName)
         {
@@ -130,7 +130,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置描述
+        /// Set description
         /// </summary>
         public GuideGroup SetDescription(string description)
         {
@@ -139,7 +139,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否自动开始
+        /// Set whether to auto start
         /// </summary>
         public GuideGroup SetAutoStart(bool autoStart)
         {
@@ -148,7 +148,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否自动完成
+        /// Set whether to auto complete
         /// </summary>
         public GuideGroup SetAutoComplete(bool autoComplete)
         {
@@ -157,7 +157,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否可以暂停
+        /// Set whether the group can be paused
         /// </summary>
         public GuideGroup SetCanPause(bool canPause)
         {
@@ -166,7 +166,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 设置是否可以恢复
+        /// Set whether the group can be resumed
         /// </summary>
         public GuideGroup SetCanResume(bool canResume)
         {
@@ -176,10 +176,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 引导项管理
+        #region Guide Item Management
 
         /// <summary>
-        /// 添加引导项
+        /// Add a guide item
         /// </summary>
         public GuideGroup AddItem(IGuideItem item)
         {
@@ -197,7 +197,7 @@ namespace GameGuide.Core
 
             m_Items.Add(item);
 
-            // 订阅引导项事件
+            // Subscribe to guide item events
             SubscribeToItemEvents(item);
 
             Debug.Log($"[GuideGroup] Added item {item.ItemId} to group {GroupId}");
@@ -205,7 +205,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 移除引导项
+        /// Remove a guide item
         /// </summary>
         public GuideGroup RemoveItem(IGuideItem item)
         {
@@ -217,10 +217,10 @@ namespace GameGuide.Core
                 return this;
             }
 
-            // 取消事件订阅
+            // Unsubscribe from item events
             UnsubscribeFromItemEvents(item);
 
-            // 如果是要移除的当前项，先停止它
+            // If removing the current item, stop it first
             if (m_CurrentItem == item)
             {
                 StopCurrentItem();
@@ -233,14 +233,14 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 移除所有引导项
+        /// Remove all guide items
         /// </summary>
         public GuideGroup ClearItems()
         {
-            // 停止当前项
+            // Stop current item
             StopCurrentItem();
 
-            // 取消所有事件订阅
+            // Unsubscribe all item events
             foreach (var item in m_Items)
             {
                 UnsubscribeFromItemEvents(item);
@@ -255,7 +255,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 根据ID查找引导项
+        /// Find a guide item by ID
         /// </summary>
         public IGuideItem FindItem(string itemId)
         {
@@ -263,7 +263,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 根据索引获取引导项
+        /// Get a guide item by index
         /// </summary>
         public IGuideItem GetItem(int index)
         {
@@ -277,20 +277,14 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 生命周期控制
+        #region Lifecycle Control
 
         /// <summary>
-        /// 初始化引导组
+        /// Initialize the guide group
         /// </summary>
         public void Initialize()
         {
             if (m_IsInitialized) return;
-
-            // 初始化所有引导项
-            foreach (var item in m_Items)
-            {
-                item.Initialize();
-            }
 
             m_IsInitialized = true;
             SetState(GuideGroupState.Waiting);
@@ -299,7 +293,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 开始引导组
+        /// Start the guide group
         /// </summary>
         public void StartGroup()
         {
@@ -315,23 +309,23 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 记录开始时间
+            // Record start time
             m_StartTime = Time.time;
 
-            // 更新状态
+            // Update state
             SetState(GuideGroupState.Running);
 
-            // 开始第一个引导项
+            // Start first guide item
             StartNextItem();
 
-            // 触发开始事件
+            // Raise started event
             OnGroupStarted?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Started: {GroupId}");
         }
 
         /// <summary>
-        /// 暂停引导组
+        /// Pause the guide group
         /// </summary>
         public void PauseGroup()
         {
@@ -347,23 +341,23 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 暂停当前引导项
+            // Pause current guide item
             if (m_CurrentItem != null)
             {
                 m_CurrentItem.PauseEffect();
             }
 
-            // 更新状态
+            // Update state
             SetState(GuideGroupState.Paused);
 
-            // 触发暂停事件
+            // Raise paused event
             OnGroupPaused?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Paused: {GroupId}");
         }
 
         /// <summary>
-        /// 恢复引导组
+        /// Resume the guide group
         /// </summary>
         public void ResumeGroup()
         {
@@ -379,23 +373,23 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 恢复当前引导项
+            // Resume current guide item
             if (m_CurrentItem != null)
             {
                 m_CurrentItem.ResumeEffect();
             }
 
-            // 更新状态
+            // Update state
             SetState(GuideGroupState.Running);
 
-            // 触发恢复事件
+            // Raise resumed event
             OnGroupResumed?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Resumed: {GroupId}");
         }
 
         /// <summary>
-        /// 停止引导组（用户主动取消）
+        /// Stop the guide group (user cancelled)
         /// </summary>
         public void StopGroup()
         {
@@ -404,20 +398,20 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 停止当前引导项
+            // Stop current guide item
             StopCurrentItem();
 
-            // 更新状态为取消
+            // Update state to Cancelled
             SetState(GuideGroupState.Cancelled);
 
-            // 触发取消事件
+            // Raise cancelled event
             OnGroupCancelled?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Cancelled: {GroupId}");
         }
 
         /// <summary>
-        /// 标记引导组为失败状态（系统异常或错误）
+        /// Mark the guide group as Failed (system exception or error)
         /// </summary>
         public void FailGroup()
         {
@@ -426,33 +420,33 @@ namespace GameGuide.Core
                 return;
             }
 
-            // 停止当前引导项
+            // Stop current guide item
             StopCurrentItem();
 
-            // 更新状态为失败
+            // Update state to Failed
             SetState(GuideGroupState.Failed);
 
-            // 触发失败事件
+            // Raise failed event
             OnGroupFailed?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Failed: {GroupId}");
         }
 
         /// <summary>
-        /// 重置引导组
+        /// Reset the guide group
         /// </summary>
         public void ResetGroup()
         {
-            // 停止当前组
+            // Stop current group
             StopGroup();
 
-            // 重置所有引导项
+            // Reset all guide items
             foreach (var item in m_Items)
             {
                 item.ResetItem();
             }
 
-            // 重置状态
+            // Reset state
             m_CurrentItemIndex = -1;
             m_CurrentItem = null;
             m_StartTime = 0f;
@@ -479,16 +473,16 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 更新方法（由外部调用）
+        #region Update Methods (called externally)
 
         /// <summary>
-        /// 更新引导组（由GuideManager调用）
+        /// Update the guide group (called by GuideManager)
         /// </summary>
         public void Update()
         {
             if (m_State != GuideGroupState.Running) return;
 
-            // 更新当前引导项
+            // Update current guide item
             if (m_CurrentItem != null)
             {
                 m_CurrentItem.Update();
@@ -497,30 +491,30 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 引导项执行逻辑
+        #region Guide Item Execution Logic
 
         /// <summary>
-        /// 开始下一个引导项
+        /// Start the next guide item
         /// </summary>
         private void StartNextItem()
         {
             try
             {
-                // 根据策略获取下一个引导项
+                // Get next item according to strategy
                 var nextItem = GetNextItem();
 
                 if (nextItem == null)
                 {
-                    // 没有更多引导项，完成组
+                    // No more items, complete the group
                     CompleteGroup();
                     return;
                 }
 
-                // 设置当前引导项
+                // Set current item
                 SetCurrentItem(nextItem);
 
-                // 开始引导项
-                // 先进入等待态，不直接运行；由条件满足后自动转为 Running
+                // Start guide item
+                // Enter Waiting first; it will switch to Running automatically when conditions are met
                 nextItem.Enter();
 
                 Debug.Log($"[GuideGroup] Started next item: {nextItem.ItemId} in group {GroupId}");
@@ -528,7 +522,7 @@ namespace GameGuide.Core
             catch (System.Exception e)
             {
                 Debug.LogError($"[GuideGroup] Failed to start next item in group {GroupId}: {e.Message}");
-                // 如果启动失败，尝试继续下一个项
+                // If starting fails, try to continue with the next item
                 var nextItem = GetNextItem();
                 if (nextItem != null)
                 {
@@ -542,7 +536,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 根据策略获取下一个引导项
+        /// Get the next guide item based on strategy
         /// </summary>
         private IGuideItem GetNextItem()
         {
@@ -550,7 +544,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 获取下一个顺序引导项
+        /// Get the next sequential guide item
         /// </summary>
         private IGuideItem GetNextSequentialItem()
         {
@@ -567,7 +561,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 获取下一个优先级引导项
+        /// Get the next priority-based guide item
         /// </summary>
         private IGuideItem GetNextPriorityItem()
         {
@@ -578,24 +572,24 @@ namespace GameGuide.Core
                 return null;
             }
 
-            // 按优先级排序（高优先级在前）
+            // Sort by priority (higher priority first)
             uncompletedItems.Sort((a, b) => b.Priority.CompareTo(a.Priority));
 
             return uncompletedItems[0];
         }
 
         /// <summary>
-        /// 获取下一个并行引导项
+        /// Get the next parallel guide item
         /// </summary>
         private IGuideItem GetNextParallelItem()
         {
-            // 并行策略：同时执行所有未完成的引导项
-            // 这里返回第一个未完成的项，实际执行时应该同时启动所有项
+            // Parallel strategy: execute all uncompleted items simultaneously
+            // Here we return the first uncompleted item; in practice all should start
             return m_Items.FirstOrDefault(item => !item.IsCompleted);
         }
 
         /// <summary>
-        /// 设置当前引导项
+        /// Set the current guide item
         /// </summary>
         private void SetCurrentItem(IGuideItem item)
         {
@@ -604,17 +598,17 @@ namespace GameGuide.Core
             var oldItem = m_CurrentItem;
             m_CurrentItem = item;
 
-            // 更新当前项索引
+            // Update current index
             m_CurrentItemIndex = m_Items.IndexOf(item);
 
-            // 触发当前项变化事件
+            // Raise current item changed event
             OnCurrentItemChanged?.Invoke(this, item);
 
             Debug.Log($"[GuideGroup] Current item changed: {oldItem?.ItemId} -> {item?.ItemId} in group {GroupId}");
         }
 
         /// <summary>
-        /// 停止当前引导项
+        /// Stop the current guide item
         /// </summary>
         private void StopCurrentItem()
         {
@@ -627,10 +621,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 引导项事件处理
+        #region Guide Item Event Handling
 
         /// <summary>
-        /// 订阅引导项事件
+        /// Subscribe to guide item events
         /// </summary>
         private void SubscribeToItemEvents(IGuideItem item)
         {
@@ -640,7 +634,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 取消引导项事件订阅
+        /// Unsubscribe from guide item events
         /// </summary>
         private void UnsubscribeFromItemEvents(IGuideItem item)
         {
@@ -650,7 +644,7 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 引导项完成回调
+        /// Guide item completed callback
         /// </summary>
         private void OnItemCompleted(IGuideItem item)
         {
@@ -659,13 +653,13 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 引导项取消回调
+        /// Guide item cancelled callback
         /// </summary>
         private void OnItemCancelled(IGuideItem item)
         {
             Debug.Log($"[GuideGroup] Item cancelled: {item.ItemId} in group {GroupId}");
 
-            // 如果是当前项被取消，开始下一个项
+            // If the current item was cancelled, start the next one
             if (m_CurrentItem == item)
             {
                 StartNextItem();
@@ -673,13 +667,13 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// 引导项失败回调
+        /// Guide item failed callback
         /// </summary>
         private void OnItemFailed(IGuideItem item)
         {
             Debug.LogWarning($"[GuideGroup] Item failed: {item.ItemId} in group {GroupId}");
 
-            // 如果是当前项失败，继续下一个项
+            // If the current item failed, continue with the next one
             if (m_CurrentItem == item)
             {
                 StartNextItem();
@@ -688,23 +682,23 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 完成处理
+        #region Completion Handling
 
         /// <summary>
-        /// 完成引导组
+        /// Complete the guide group
         /// </summary>
         private void CompleteGroup()
         {
-            // 记录持续时间
+            // Record duration
             m_Duration = Time.time - m_StartTime;
 
-            // 停止当前引导项
+            // Stop current item
             StopCurrentItem();
 
-            // 更新状态
+            // Update state
             SetState(GuideGroupState.Completed);
 
-            // 触发完成事件
+            // Raise completed event
             OnGroupCompleted?.Invoke(this);
 
             Debug.Log($"[GuideGroup] Completed: {GroupId} (Duration: {m_Duration:F2}s)");
@@ -712,10 +706,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 排序逻辑
+        #region Sorting Logic
 
         /// <summary>
-        /// 根据策略排序引导项
+        /// Sort guide items according to strategy
         /// </summary>
         private void SortItemsByStrategy()
         {
@@ -723,10 +717,10 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 状态管理
+        #region State Management
 
         /// <summary>
-        /// 设置状态
+        /// Set state
         /// </summary>
         private void SetState(GuideGroupState newState)
         {
@@ -735,7 +729,7 @@ namespace GameGuide.Core
             var oldState = m_State;
             m_State = newState;
 
-            // 触发状态变化事件
+            // Raise state changed event
             OnStateChanged?.Invoke(this);
 
             Debug.Log($"[GuideGroup] State changed: {GroupId} {oldState} -> {newState}");
@@ -743,17 +737,17 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 清理和销毁
+        #region Cleanup and Disposal
 
         /// <summary>
-        /// 清理资源
+        /// Cleanup resources
         /// </summary>
         public void Dispose()
         {
-            // 停止组
+            // Stop group
             StopGroup();
 
-            // 清理所有引导项
+            // Cleanup all guide items
             foreach (var item in m_Items)
             {
                 UnsubscribeFromItemEvents(item);
@@ -769,7 +763,7 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region 重写方法
+        #region Overrides
 
         public override string ToString()
         {
