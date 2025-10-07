@@ -32,7 +32,6 @@ namespace UIExt.Effect
         private IAnimation m_FocusAnimation;
 
         private UIEventMask m_EventMask;
-        private Action<GameObject> m_OnTargetClick;
 
         private UIEventMask EventMask
         {
@@ -130,15 +129,6 @@ namespace UIExt.Effect
             return this;
         }
 
-        /// <summary>
-        /// Set target click callback
-        /// </summary>
-        public LockEffect OnTargetClick(Action<GameObject> onTargetClick)
-        {
-            m_OnTargetClick = onTargetClick;
-            return this;
-        }
-
         protected override void OnPlay()
         {
             base.OnPlay();
@@ -148,9 +138,6 @@ namespace UIExt.Effect
             EventMask.PassThroughStyle = m_AllowClick
                 ? UIEventPassThrough.PassThroughType.PassAtTargetRect
                 : UIEventPassThrough.PassThroughType.PassNever;
-
-            // Setup click callback
-            EventMask.PassThroughClickCallback = OnMaskTargetClick;
 
             // Setup focus frame
             FocusFrame.gameObject.SetActive(true);
@@ -203,11 +190,6 @@ namespace UIExt.Effect
             {
                 m_FocusAnimation.Resume();
             }
-        }
-
-        private void OnMaskTargetClick(GameObject clickedObject)
-        {
-            m_OnTargetClick?.Invoke(clickedObject);
         }
 
         private void Update()

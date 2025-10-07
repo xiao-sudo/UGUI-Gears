@@ -8,13 +8,6 @@ namespace GameGuide.Core.Effect
     /// </summary>
     public abstract class GuideEffectBase : EffectBase, IGuideEffect, IResettableEffect
     {
-        #region Guide-specific Fields
-
-        private IGuideItem m_GuideItem;
-        private bool m_IsGuideActive = false;
-
-        #endregion
-
         #region Guide-specific Events
 
         public event Action<IGuideEffect> OnGuideEffectCompleted;
@@ -23,23 +16,7 @@ namespace GameGuide.Core.Effect
 
         #endregion
 
-        #region Guide-specific Properties
-
-        public bool IsGuideActive => m_IsGuideActive;
-
-        public bool IsPaused => m_IsPaused;
-
-        #endregion
-
         #region Guide-specific Methods
-
-        /// <summary>
-        /// Set the guide item reference
-        /// </summary>
-        public void SetGuideItem(IGuideItem guideItem)
-        {
-            m_GuideItem = guideItem;
-        }
 
         /// <summary>
         /// Reset effect state
@@ -47,7 +24,6 @@ namespace GameGuide.Core.Effect
         public virtual void Reset()
         {
             Stop();
-            m_IsGuideActive = false;
             OnReset();
         }
 
@@ -61,7 +37,6 @@ namespace GameGuide.Core.Effect
 
             if (m_IsPlaying)
             {
-                m_IsGuideActive = true;
                 OnGuideEffectStarted?.Invoke(this);
             }
         }
@@ -72,7 +47,6 @@ namespace GameGuide.Core.Effect
 
             if (!m_IsPlaying)
             {
-                m_IsGuideActive = false;
                 OnGuideEffectStopped?.Invoke(this);
             }
         }
@@ -80,14 +54,12 @@ namespace GameGuide.Core.Effect
         protected override void InvokeComplete()
         {
             base.InvokeComplete();
-            m_IsGuideActive = false;
             OnGuideEffectCompleted?.Invoke(this);
         }
 
         protected override void InvokeCancel()
         {
             base.InvokeCancel();
-            m_IsGuideActive = false;
             OnGuideEffectStopped?.Invoke(this);
         }
 

@@ -120,9 +120,6 @@ namespace GameGuide.Core.Effect
             // Set LockEffect target
             LockEffect.Target = m_Target;
 
-            // Set click callback
-            LockEffect.OnTargetClick(OnLockEffectTargetClick);
-
             // Play LockEffect
             LockEffect.Play();
         }
@@ -157,22 +154,6 @@ namespace GameGuide.Core.Effect
             
             // Reset LockEffect
             LockEffect.Stop();
-        }
-
-        #endregion
-
-        #region Event Handling
-
-        /// <summary>
-        /// LockEffect target clicked callback
-        /// </summary>
-        private void OnLockEffectTargetClick(GameObject clickedObject)
-        {
-            // Invoke user callback
-            m_OnTargetClick?.Invoke(clickedObject);
-
-            // Auto-complete guide effect
-            InvokeComplete();
         }
 
         #endregion

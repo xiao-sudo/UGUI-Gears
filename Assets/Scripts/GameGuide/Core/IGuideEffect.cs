@@ -12,12 +12,6 @@ namespace GameGuide.Core
         event Action<IGuideEffect> OnGuideEffectCompleted;
         event Action<IGuideEffect> OnGuideEffectStarted;
         event Action<IGuideEffect> OnGuideEffectStopped;
-        
-        // Set guide item reference
-        void SetGuideItem(IGuideItem guideItem);
-        
-        // Guide-specific state
-        bool IsGuideActive { get; }
     }
 
     /// <summary>

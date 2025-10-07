@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using GameGuide.Conditions;
-using UIExt.Effect;
-using UnityEngine.Serialization;
+using GameGuide.Core.Config;
 
 namespace GameGuide.Core
 {
@@ -46,7 +44,10 @@ namespace GameGuide.Core
         private float m_Duration = 0f;
         private IGuideCondition m_TriggerCondition;
         private IGuideCondition m_CompletionCondition;
+
         private IGuideEffect m_GuideEffect;
+        private IGuideEffectConfig m_GuideEffectConfig;
+
         private bool m_IsInitialized = false;
         private bool m_EffectIsPlaying = false;
         private float m_WaitingStartTime = 0f;
@@ -220,19 +221,10 @@ namespace GameGuide.Core
         /// <summary>
         /// Set guide effect
         /// </summary>
-        public GuideItem SetGuideEffect(IGuideEffect effect)
+        public GuideItem SetGuideEffect(IGuideEffect effect, IGuideEffectConfig config)
         {
-            if (m_GuideEffect != null)
-            {
-                m_GuideEffect.OnGuideEffectCompleted -= OnGuideEffectCompleted;
-            }
-
             m_GuideEffect = effect;
-
-            if (m_GuideEffect != null)
-            {
-                m_GuideEffect.OnGuideEffectCompleted += OnGuideEffectCompleted;
-            }
+            m_GuideEffectConfig = config;
 
             return this;
         }
@@ -442,8 +434,10 @@ namespace GameGuide.Core
         {
             if (m_GuideEffect == null) return;
 
-            // Subscribe to effect completed event
-            m_GuideEffect.OnGuideEffectCompleted += OnGuideEffectCompleted;
+            if (null == m_GuideEffectConfig)
+                return;
+
+            m_GuideEffectConfig.Apply(m_GuideEffect);
 
             Debug.Log($"[GuideItem] Effect initialized: {ItemId}");
         }
@@ -571,28 +565,6 @@ namespace GameGuide.Core
             {
                 Debug.LogError($"[GuideItem] Failed to reset effect for item {ItemId}: {e.Message}");
             }
-        }
-
-        #endregion
-
-        #region Effect Event Handling
-
-        /// <summary>
-        /// Effect completed callback
-        /// </summary>
-        private void OnGuideEffectCompleted(IGuideEffect effect)
-        {
-            if (effect != m_GuideEffect) return;
-
-            m_EffectIsPlaying = false;
-
-            // If auto-complete is enabled, complete the item
-            if (m_AutoComplete && m_State == GuideItemState.Active)
-            {
-                CompleteItem();
-            }
-
-            Debug.Log($"[GuideItem] Effect completed: {ItemId}");
         }
 
         #endregion
@@ -738,11 +710,6 @@ namespace GameGuide.Core
             if (m_CompletionCondition != null)
             {
                 m_CompletionCondition.OnConditionChanged -= OnCompletionConditionChanged;
-            }
-
-            if (m_GuideEffect != null)
-            {
-                m_GuideEffect.OnGuideEffectCompleted -= OnGuideEffectCompleted;
             }
         }
 
