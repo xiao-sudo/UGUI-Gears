@@ -6,154 +6,60 @@ using UnityEngine;
 namespace GameGuide.Core.Effect
 {
     /// <summary>
-    /// Guide lock effect - built on top of LockEffect
+    /// Guide lock effect - highlights and locks a UI element with guide-specific events
     /// </summary>
     [RequireComponent(typeof(UIEventMask))]
-    public class GuideLockEffect : GuideEffectBase
+    public class GuideLockEffect : LockEffect, IGuideEffect, IResettableEffect
     {
-        #region Private Fields
-        
-        private LockEffect m_LockEffect;
-        private Action<GameObject> m_OnTargetClick;
-        
-        #endregion
+        #region IGuideEffect Implementation
 
-        #region Properties
-        
-        private LockEffect LockEffect
-        {
-            get
-            {
-                if (m_LockEffect == null)
-                {
-                    m_LockEffect = GetComponent<LockEffect>();
-                    if (m_LockEffect == null)
-                    {
-                        m_LockEffect = gameObject.AddComponent<LockEffect>();
-                    }
-                }
-                return m_LockEffect;
-            }
-        }
-        
-        #endregion
-
-        #region Configuration Methods (Fluent)
-
-        /// <summary>
-        /// Set mask type
-        /// </summary>
-        public GuideLockEffect SetMaskType(UIEventMask.MaskType maskType)
-        {
-            LockEffect.SetMaskType(maskType);
-            return this;
-        }
-
-        /// <summary>
-        /// Set whether clicking is allowed
-        /// </summary>
-        public GuideLockEffect SetAllowClick(bool allowClick)
-        {
-            LockEffect.SetAllowClick(allowClick);
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus frame
-        /// </summary>
-        public GuideLockEffect SetFocusFrame(RectTransform focusFrame)
-        {
-            LockEffect.SetFocusFrame(focusFrame);
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus frame offset
-        /// </summary>
-        public GuideLockEffect SetFocusFrameOffset(Vector2 centerOffset, Vector2 sizeIncrease)
-        {
-            LockEffect.SetFocusFrameOffset(centerOffset, sizeIncrease);
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus frame offset
-        /// </summary>
-        public GuideLockEffect SetFocusFrameOffset(float offsetX, float offsetY, float widthIncrease, float heightIncrease)
-        {
-            LockEffect.SetFocusFrameOffset(offsetX, offsetY, widthIncrease, heightIncrease);
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus animation
-        /// </summary>
-        public GuideLockEffect SetFocusAnimation(IAnimation imageAnimation)
-        {
-            LockEffect.SetFocusAnimation(imageAnimation);
-            return this;
-        }
-
-        /// <summary>
-        /// Set target click callback
-        /// </summary>
-        public GuideLockEffect OnTargetClick(Action<GameObject> onTargetClick)
-        {
-            m_OnTargetClick = onTargetClick;
-            return this;
-        }
+        public event Action<IGuideEffect> OnGuideEffectCompleted;
+        public event Action<IGuideEffect> OnGuideEffectStarted;
+        public event Action<IGuideEffect> OnGuideEffectStopped;
 
         #endregion
 
         #region Overrides
 
-        protected override void OnPlay()
+        public override void Play()
         {
-            base.OnPlay();
+            base.Play();
 
-            if (m_Target == null)
+            if (m_IsPlaying)
             {
-                Debug.LogError($"[GuideLockEffect] Target is null, cannot play effect");
-                return;
+                OnGuideEffectStarted?.Invoke(this);
             }
-
-            // Set LockEffect target
-            LockEffect.Target = m_Target;
-
-            // Play LockEffect
-            LockEffect.Play();
         }
 
-        protected override void OnStop()
+        public override void Stop()
         {
-            base.OnStop();
+            base.Stop();
 
-            // Stop LockEffect
-            LockEffect.Stop();
+            if (!m_IsPlaying)
+            {
+                OnGuideEffectStopped?.Invoke(this);
+            }
         }
 
-        protected override void OnPause()
+        protected override void InvokeComplete()
         {
-            base.OnPause();
-
-            // Pause LockEffect
-            LockEffect.Pause();
+            base.InvokeComplete();
+            OnGuideEffectCompleted?.Invoke(this);
         }
 
-        protected override void OnResume()
+        protected override void InvokeCancel()
         {
-            base.OnResume();
-
-            // Resume LockEffect
-            LockEffect.Resume();
+            base.InvokeCancel();
+            OnGuideEffectStopped?.Invoke(this);
         }
 
-        protected override void OnReset()
+        #endregion
+
+        #region IResettableEffect Implementation
+
+        public virtual void Reset()
         {
-            base.OnReset();
-            
-            // Reset LockEffect
-            LockEffect.Stop();
+            Stop();
         }
 
         #endregion
