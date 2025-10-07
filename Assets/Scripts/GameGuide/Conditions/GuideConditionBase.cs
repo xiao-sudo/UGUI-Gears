@@ -16,7 +16,7 @@ namespace GameGuide.Conditions
         protected string m_Description;
 
         [SerializeField]
-        protected ConditionCleanupStrategy m_CleanupStrategy = ConditionCleanupStrategy.Manual;
+        protected ConditionCleanupStrategy m_CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout;
 
         [SerializeField]
         protected float m_TimeoutSeconds = 0f;
