@@ -23,7 +23,7 @@ namespace GameGuide.Core
         IGuideEffect GuideEffect { get; }
         
         // Time management
-        float StartTime { get; }
+        float EnterTime { get; }
         float Duration { get; }
         float RunningTimeoutSeconds { get; }
         

@@ -40,7 +40,7 @@ namespace GameGuide.Core
         #region Private Fields
 
         private GuideItemState m_State = GuideItemState.Inactive;
-        private float m_StartTime = 0f;
+        private float m_EnterTime = 0f;
         private float m_Duration = 0f;
         private IGuideCondition m_TriggerCondition;
         private IGuideCondition m_CompletionCondition;
@@ -61,7 +61,7 @@ namespace GameGuide.Core
         public string Description => m_Description;
         public GuideItemPriority Priority => m_Priority;
         public GuideItemState State => m_State;
-        public float StartTime => m_StartTime;
+        public float EnterTime => m_EnterTime;
 
         public float Duration => m_Duration;
 
@@ -270,8 +270,10 @@ namespace GameGuide.Core
                 return;
             }
 
+
             SetState(GuideItemState.Waiting);
 
+            m_EnterTime = Time.time;
             // Start waiting timer (for Waiting timeout)
             m_WaitingStartTime = Time.time;
 
@@ -296,8 +298,6 @@ namespace GameGuide.Core
                 return;
             }
 
-            // Record start time
-            m_StartTime = Time.time;
             m_RunningStartTime = Time.time;
 
             // Update state
@@ -324,7 +324,7 @@ namespace GameGuide.Core
             }
 
             // Record duration
-            m_Duration = Time.time - m_StartTime;
+            m_Duration = Time.time - m_EnterTime;
 
             // Stop guide effect
             StopEffect();
@@ -369,7 +369,7 @@ namespace GameGuide.Core
             CancelItem();
 
             // Reset time records
-            m_StartTime = 0f;
+            m_EnterTime = 0f;
             m_Duration = 0f;
             m_RunningStartTime = 0f;
             m_WaitingStartTime = 0f;
