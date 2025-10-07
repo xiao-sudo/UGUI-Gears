@@ -65,15 +65,6 @@ namespace UIExt.Effect
         private DragEndpoint m_StartEndpoint;
         private DragEndpoint m_EndEndpoint;
 
-        // [Header("Drag Settings")]
-        // [SerializeField]
-        // [Tooltip("Start position for the drag (Follow when using RectTransform API)")]
-        // private RectTransform m_StartPosition;
-        //
-        // [SerializeField]
-        // [Tooltip("End position for the drag (Follow when using RectTransform API)")]
-        // private RectTransform m_EndPosition;
-
         [SerializeField]
         [Tooltip("Drag hint object (like a hand icon)")]
         private RectTransform m_DragHint;
