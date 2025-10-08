@@ -47,6 +47,11 @@ namespace UIExt.Effect
         /// Set cancel callback
         /// </summary>
         IEffect OnCancel(Action onCancel);
+
+        /// <summary>
+        /// Set a dynamic target finder function
+        /// </summary>
+        IEffect SetTargetFinder(Func<RectTransform> targetFinder);
     }
 }
 

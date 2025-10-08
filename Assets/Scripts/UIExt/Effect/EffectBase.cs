@@ -17,6 +17,11 @@ namespace UIExt.Effect
         protected bool m_IsPlaying;
         protected bool m_IsPaused;
 
+        /// <summary>
+        /// Optional target finder function that will be called during Play() if m_Target is null
+        /// </summary>
+        protected Func<RectTransform> m_TargetFinder;
+
         public RectTransform Target
         {
             get => m_Target;
@@ -25,12 +30,46 @@ namespace UIExt.Effect
 
         public bool IsPlaying => m_IsPlaying;
 
+        /// <summary>
+        /// Set a dynamic target finder function
+        /// </summary>
+        public IEffect SetTargetFinder(Func<RectTransform> targetFinder)
+        {
+            m_TargetFinder = targetFinder;
+            return this;
+        }
+
+        /// <summary>
+        /// Override this method to provide custom target finding logic
+        /// Called during Play() if m_Target is null and m_TargetFinder is also null
+        /// </summary>
+        protected virtual RectTransform FindTarget()
+        {
+            return null;
+        }
+
         public virtual void Play()
         {
+            // Try to resolve target if not set
             if (m_Target == null)
             {
-                Debug.LogError($"[{GetType().Name}] Target is null, cannot play effect");
-                return;
+                // First try the target finder delegate
+                if (m_TargetFinder != null)
+                {
+                    m_Target = m_TargetFinder();
+                }
+                // Then try the virtual FindTarget method
+                else
+                {
+                    m_Target = FindTarget();
+                }
+
+                // If still null, log error and return
+                if (m_Target == null)
+                {
+                    Debug.LogError($"[{GetType().Name}] Target is null and cannot be found, cannot play effect");
+                    return;
+                }
             }
 
             m_IsPlaying = true;
