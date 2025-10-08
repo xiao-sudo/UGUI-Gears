@@ -42,12 +42,6 @@ namespace GameGuide.Core
         private bool m_EnableDebugLog = true;
 
         [SerializeField]
-        private bool m_AutoSave = true;
-
-        [SerializeField]
-        private float m_SaveInterval = 5f;
-
-        [SerializeField]
         private bool m_PauseOnApplicationPause = true;
 
         [SerializeField]
@@ -57,13 +51,11 @@ namespace GameGuide.Core
 
         #region Private Fields
 
-        private Dictionary<string, IGuideGroup> m_Groups = new Dictionary<string, IGuideGroup>();
-        private List<IGuideGroup> m_ActiveGroups = new List<IGuideGroup>();
-        private List<IGuideGroup> m_CompletedGroups = new List<IGuideGroup>();
+        private readonly Dictionary<string, IGuideGroup> m_Groups = new();
+        private readonly List<IGuideGroup> m_ActiveGroups = new();
+        private readonly List<IGuideGroup> m_CompletedGroups = new();
         private bool m_IsPaused = false;
         private bool m_IsInitialized = false;
-        private float m_LastSaveTime = 0f;
-        private GuideSaveData m_SaveData = new GuideSaveData();
 
         #endregion
 
@@ -89,11 +81,11 @@ namespace GameGuide.Core
         {
             // Stop all guide groups
             StopAllGuides();
-            
+
             // Clear all data
             m_ActiveGroups.Clear();
             m_CompletedGroups.Clear();
-            
+
             if (m_EnableDebugLog)
             {
                 Debug.Log("[GuideManager] Cleared all guide progress");
@@ -128,24 +120,12 @@ namespace GameGuide.Core
             }
         }
 
-        private void Start()
-        {
-            // Load saved data
-            LoadSaveData();
-        }
-
         private void Update()
         {
             if (!m_IsInitialized || m_IsPaused) return;
 
             // Update all active guide groups
             UpdateActiveGroups();
-
-            // Auto-save
-            if (m_AutoSave && Time.time - m_LastSaveTime >= m_SaveInterval)
-            {
-                SaveData();
-            }
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -176,9 +156,6 @@ namespace GameGuide.Core
 
         private void OnDestroy()
         {
-            // Save data
-            SaveData();
-
             // Cleanup all guide groups
             ClearAllGroups();
         }
@@ -611,12 +588,10 @@ namespace GameGuide.Core
 
         public void SaveGuideProgress()
         {
-            SaveData();
         }
 
         public void LoadGuideProgress()
         {
-            LoadSaveData();
         }
 
         #endregion
@@ -812,99 +787,6 @@ namespace GameGuide.Core
 
         #endregion
 
-        #region Data Persistence
-
-        /// <summary>
-        /// Save data
-        /// </summary>
-        public void SaveData()
-        {
-            try
-            {
-                // Collect data to save
-                m_SaveData.Clear();
-
-                foreach (var group in m_Groups.Values)
-                {
-                    var groupData = new GuideGroupSaveData
-                    {
-                        GroupId = group.GroupId,
-                        State = group.State.ToString(),
-                        CurrentItemIndex = group.CurrentItemIndex,
-                    };
-
-                    m_SaveData.Groups.Add(groupData);
-                }
-
-                // Save to PlayerPrefs
-                var json = JsonUtility.ToJson(m_SaveData);
-                PlayerPrefs.SetString("GuideSaveData", json);
-                PlayerPrefs.Save();
-
-                m_LastSaveTime = Time.time;
-
-                if (m_EnableDebugLog)
-                {
-                    Debug.Log("[GuideManager] Data saved");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[GuideManager] Failed to save data: {e.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Load data
-        /// </summary>
-        public void LoadSaveData()
-        {
-            try
-            {
-                if (!PlayerPrefs.HasKey("GuideSaveData"))
-                {
-                    if (m_EnableDebugLog)
-                    {
-                        Debug.Log("[GuideManager] No save data found");
-                    }
-
-                    return;
-                }
-
-                var json = PlayerPrefs.GetString("GuideSaveData");
-                m_SaveData = JsonUtility.FromJson<GuideSaveData>(json);
-
-                if (m_SaveData == null)
-                {
-                    m_SaveData = new GuideSaveData();
-                    return;
-                }
-
-                // Restore group states
-                foreach (var groupData in m_SaveData.Groups)
-                {
-                    var group = GetGroup(groupData.GroupId);
-                    if (group != null)
-                    {
-                        // State restoration can be implemented as needed.
-                        // Since GuideGroup is now a pure C# class, the restoration logic should be redesigned.
-                    }
-                }
-
-                if (m_EnableDebugLog)
-                {
-                    Debug.Log("[GuideManager] Data loaded");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[GuideManager] Failed to load data: {e.Message}");
-                m_SaveData = new GuideSaveData();
-            }
-        }
-
-        #endregion
-
         #region Debugging & Logging
 
         /// <summary>
@@ -930,27 +812,4 @@ namespace GameGuide.Core
 
         #endregion
     }
-
-    #region Save Data Structures
-
-    [Serializable]
-    public class GuideSaveData
-    {
-        public List<GuideGroupSaveData> Groups = new List<GuideGroupSaveData>();
-
-        public void Clear()
-        {
-            Groups.Clear();
-        }
-    }
-
-    [Serializable]
-    public class GuideGroupSaveData
-    {
-        public string GroupId;
-        public string State;
-        public int CurrentItemIndex;
-    }
-
-    #endregion
 }

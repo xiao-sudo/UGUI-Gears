@@ -352,48 +352,6 @@ namespace GameGuide.Conditions
             return condition;
         }
 
-        public void RegisterAutoCleanupCondition(IGuideCondition condition)
-        {
-            if (condition == null) return;
-            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfied;
-            RegisterCondition(condition);
-        }
-
-        /// <summary>
-        /// Register condition with timeout auto cleanup
-        /// </summary>
-        public void RegisterTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
-        {
-            if (condition == null) return;
-
-            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnTimeout;
-            condition.TimeoutSeconds = timeoutSeconds;
-            RegisterCondition(condition);
-        }
-
-        /// <summary>
-        /// Register persistent condition (never auto cleanup)
-        /// </summary>
-        public void RegisterPersistentCondition(IGuideCondition condition)
-        {
-            if (condition == null) return;
-
-            condition.CleanupStrategy = ConditionCleanupStrategy.Persistent;
-            RegisterCondition(condition);
-        }
-
-        /// <summary>
-        /// Register condition with both satisfied and timeout auto cleanup
-        /// </summary>
-        public void RegisterSatisfiedOrTimeoutCondition(IGuideCondition condition, float timeoutSeconds)
-        {
-            if (condition == null) return;
-
-            condition.CleanupStrategy = ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout;
-            condition.TimeoutSeconds = timeoutSeconds;
-            RegisterCondition(condition);
-        }
-
         private void LogDebug(string message)
         {
             if (m_EnableDebugLog)
