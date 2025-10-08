@@ -117,8 +117,6 @@ namespace GameGuide.Conditions
             // Subscribe to condition changes for auto cleanup
             condition.OnConditionChanged += OnConditionStateChanged;
 
-            // Start listening to the condition
-            condition.StartListening();
 
             // If condition needs periodic state checking, add to state check list
             if (ShouldCheckCondition(condition))
@@ -139,6 +137,9 @@ namespace GameGuide.Conditions
             }
 
             LogDebug($"Registered condition: {condition.ConditionId} with strategy: {condition.CleanupStrategy}");
+
+            // Start listening to the condition
+            condition.StartListening();
         }
 
         /// <summary>
@@ -260,8 +261,7 @@ namespace GameGuide.Conditions
 
             if (condition.IsSatisfied())
             {
-                if (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfied ||
-                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout)
+                if (0 != (condition.CleanupStrategy & ConditionCleanupStrategy.AutoOnSatisfied))
                 {
                     LogDebug($"Auto cleaning up satisfied condition: {condition.ConditionId}");
                     UnregisterCondition(condition);
@@ -282,8 +282,7 @@ namespace GameGuide.Conditions
         /// </summary>
         private bool HasTimeout(IGuideCondition condition)
         {
-            return (condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnTimeout ||
-                    condition.CleanupStrategy == ConditionCleanupStrategy.AutoOnSatisfiedOrTimeout) &&
+            return 0 != (condition.CleanupStrategy & ConditionCleanupStrategy.AutoOnTimeout) &&
                    condition.TimeoutSeconds > 0f;
         }
 
