@@ -12,8 +12,8 @@ namespace GameGuide.Conditions.UIConditions
         {
         }
 
-        public UIStateConditionDynamicTarget(UIStateType stateType, bool expectValue = true)
-            : base(null, stateType, expectValue)
+        public UIStateConditionDynamicTarget(string id, UIStateType stateType, bool expectValue = true)
+            : base(id, null, stateType, expectValue)
         {
             m_DynamicTarget = new DynamicTarget();
         }

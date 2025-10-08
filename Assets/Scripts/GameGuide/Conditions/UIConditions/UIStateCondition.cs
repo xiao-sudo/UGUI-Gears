@@ -48,8 +48,8 @@ namespace GameGuide.Conditions.UIConditions
         {
         }
 
-        public UIStateCondition(GameObject target, UIStateType type, bool expected = true)
-            : base($"UI_{type}_{target?.name}", $"UI object {target?.name} {type} state is {expected}")
+        public UIStateCondition(string id, GameObject target, UIStateType type, bool expected = true)
+            : base(id, $"UI object {target?.name} {type} state is {expected}")
         {
             m_TargetObject = target;
             m_StateType = type;
