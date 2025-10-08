@@ -14,17 +14,6 @@ namespace GameGuide.Core
     }
 
     /// <summary>
-    /// Guide item priority
-    /// </summary>
-    public enum GuideItemPriority
-    {
-        Low = 0,
-        Normal = 1,
-        High = 2,
-        Critical = 3
-    }
-
-    /// <summary>
     /// Guide group state enum
     /// </summary>
     public enum GuideGroupState

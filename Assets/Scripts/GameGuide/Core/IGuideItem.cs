@@ -11,7 +11,6 @@ namespace GameGuide.Core
         // Basic properties
         string ItemId { get; }
         string Description { get; }
-        GuideItemPriority Priority { get; }
         GuideItemState State { get; }
 
         // Condition system

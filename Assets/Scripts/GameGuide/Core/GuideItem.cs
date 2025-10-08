@@ -19,9 +19,6 @@ namespace GameGuide.Core
         [SerializeField]
         private string m_Description;
 
-        [SerializeField]
-        private GuideItemPriority m_Priority = GuideItemPriority.Normal;
-
         // Timeout configuration: waiting phase and running phase configured separately
         [SerializeField]
         private float m_WaitingTimeoutSeconds = 0f; // 0 means waiting timeout is disabled
@@ -59,7 +56,6 @@ namespace GameGuide.Core
 
         public string ItemId => m_ItemId;
         public string Description => m_Description;
-        public GuideItemPriority Priority => m_Priority;
         public GuideItemState State => m_State;
         public float EnterTime => m_EnterTime;
 
@@ -121,15 +117,6 @@ namespace GameGuide.Core
         public GuideItem SetDescription(string description)
         {
             m_Description = description;
-            return this;
-        }
-
-        /// <summary>
-        /// Set priority
-        /// </summary>
-        public GuideItem SetPriority(GuideItemPriority priority)
-        {
-            m_Priority = priority;
             return this;
         }
 
@@ -719,7 +706,7 @@ namespace GameGuide.Core
 
         public override string ToString()
         {
-            return $"[GuideItem] {ItemId}: {Description} (State: {State}, Priority: {Priority})";
+            return $"[GuideItem] {ItemId}: {Description} (State: {State})";
         }
 
         #endregion

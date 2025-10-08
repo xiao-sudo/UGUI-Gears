@@ -561,24 +561,6 @@ namespace GameGuide.Core
         }
 
         /// <summary>
-        /// Get the next priority-based guide item
-        /// </summary>
-        private IGuideItem GetNextPriorityItem()
-        {
-            var uncompletedItems = m_Items.Where(item => !item.IsCompleted).ToList();
-
-            if (uncompletedItems.Count == 0)
-            {
-                return null;
-            }
-
-            // Sort by priority (higher priority first)
-            uncompletedItems.Sort((a, b) => b.Priority.CompareTo(a.Priority));
-
-            return uncompletedItems[0];
-        }
-
-        /// <summary>
         /// Get the next parallel guide item
         /// </summary>
         private IGuideItem GetNextParallelItem()
