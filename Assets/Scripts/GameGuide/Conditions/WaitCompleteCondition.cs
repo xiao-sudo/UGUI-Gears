@@ -33,8 +33,6 @@ namespace GameGuide.Conditions
 
         public override void PerformStateCheck()
         {
-            base.PerformStateCheck();
-
             if (m_LastCompleteState != CurrentState)
             {
                 if (IsSatisfied())
