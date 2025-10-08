@@ -32,12 +32,6 @@ namespace GameGuide.Conditions.UIConditions
         private Selectable m_Selectable;
         private bool m_LastStateValue;
 
-        public GameObject TargetObject
-        {
-            get => m_TargetObject;
-            set => m_TargetObject = value;
-        }
-
         public UIStateType StateType
         {
             get => m_StateType;
@@ -78,45 +72,48 @@ namespace GameGuide.Conditions.UIConditions
 
         public override bool IsSatisfied()
         {
-            if (m_TargetObject == null) return false;
+            var targetObject = GetTargetObject();
+            if (targetObject == null) return false;
 
-            bool currentStateValue = GetCurrentStateValue();
+            bool currentStateValue = GetCurrentStateValue(targetObject);
             return currentStateValue == m_ExpectedValue;
         }
 
-        private bool GetCurrentStateValue()
+        private bool GetCurrentStateValue(GameObject targetObject)
         {
+            if (targetObject == null) return false;
+
             switch (m_StateType)
             {
                 case UIStateType.ActiveInHierarchy:
-                    return m_TargetObject.activeInHierarchy;
+                    return targetObject.activeInHierarchy;
 
                 case UIStateType.Interactable:
                     // First check if the object is active in hierarchy
-                    if (!m_TargetObject.activeInHierarchy)
+                    if (!targetObject.activeInHierarchy)
                         return false;
 
-                    if (m_Selectable == null)
-                        m_Selectable = m_TargetObject.GetComponent<Selectable>();
+                    if (m_Selectable == null || m_Selectable.gameObject != targetObject)
+                        m_Selectable = targetObject.GetComponent<Selectable>();
                     return m_Selectable != null && m_Selectable.interactable;
 
                 case UIStateType.Visible:
                     // First check if the object is active in hierarchy (highest priority)
-                    if (!m_TargetObject.activeInHierarchy)
+                    if (!targetObject.activeInHierarchy)
                         return false;
 
                     // Check if the object is enabled
-                    var visibleComponent = m_TargetObject.GetComponent<MonoBehaviour>();
+                    var visibleComponent = targetObject.GetComponent<MonoBehaviour>();
                     if (visibleComponent != null && !visibleComponent.enabled)
                         return false;
 
                     // Check CanvasGroup alpha and interactable state
-                    var canvasGroup = m_TargetObject.GetComponent<CanvasGroup>();
+                    var canvasGroup = targetObject.GetComponent<CanvasGroup>();
                     if (canvasGroup != null)
                         return canvasGroup.alpha > 0.01f && canvasGroup.interactable;
 
                     // Check Image alpha
-                    var image = m_TargetObject.GetComponent<Image>();
+                    var image = targetObject.GetComponent<Image>();
                     if (image != null)
                         return image.color.a > 0.01f;
 
@@ -125,19 +122,19 @@ namespace GameGuide.Conditions.UIConditions
 
                 case UIStateType.Enabled:
                     // First check if the object is active in hierarchy
-                    if (!m_TargetObject.activeInHierarchy)
+                    if (!targetObject.activeInHierarchy)
                         return false;
 
-                    var enableComponent = m_TargetObject.GetComponent<MonoBehaviour>();
+                    var enableComponent = targetObject.GetComponent<MonoBehaviour>();
                     return enableComponent != null && enableComponent.enabled;
 
                 case UIStateType.Selected:
                     // First check if the object is active in hierarchy
-                    if (!m_TargetObject.activeInHierarchy)
+                    if (!targetObject.activeInHierarchy)
                         return false;
 
-                    if (m_Selectable == null)
-                        m_Selectable = m_TargetObject.GetComponent<Selectable>();
+                    if (m_Selectable == null || m_Selectable.gameObject != targetObject)
+                        m_Selectable = targetObject.GetComponent<Selectable>();
                     return m_Selectable != null &&
                            m_Selectable.gameObject == EventSystem.current?.currentSelectedGameObject;
 
@@ -148,9 +145,10 @@ namespace GameGuide.Conditions.UIConditions
 
         protected override void OnStartListening()
         {
-            if (m_TargetObject == null) return;
+            var targetObject = GetTargetObject();
+            if (targetObject == null) return;
 
-            m_Selectable = m_TargetObject.GetComponent<Selectable>();
+            m_Selectable = targetObject.GetComponent<Selectable>();
 
             CheckStateChange();
         }
@@ -162,10 +160,11 @@ namespace GameGuide.Conditions.UIConditions
 
         protected override string GetDefaultDescription()
         {
-            if (m_TargetObject == null)
+            var targetObject = GetTargetObject();
+            if (targetObject == null)
                 return $"UI object state check: {m_StateType} = {m_ExpectedValue}";
 
-            return $"UI object {m_TargetObject.name} {m_StateType} state is {m_ExpectedValue}";
+            return $"UI object {targetObject.name} {m_StateType} state is {m_ExpectedValue}";
         }
 
         /// <summary>
@@ -173,14 +172,24 @@ namespace GameGuide.Conditions.UIConditions
         /// </summary>
         public void CheckStateChange()
         {
-            if (!IsListening || m_TargetObject == null) return;
+            if (!IsListening) return;
 
-            bool currentState = GetCurrentStateValue();
+            var targetObject = GetTargetObject();
+
+            if (null == targetObject)
+                return;
+
+            bool currentState = GetCurrentStateValue(targetObject);
             if (currentState != m_LastStateValue)
             {
                 m_LastStateValue = currentState;
                 TriggerConditionChanged();
             }
+        }
+
+        protected virtual GameObject GetTargetObject()
+        {
+            return m_TargetObject;
         }
     }
 }
