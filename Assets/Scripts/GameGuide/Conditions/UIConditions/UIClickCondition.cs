@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace GameGuide.Conditions.UIConditions
 {
@@ -15,21 +13,10 @@ namespace GameGuide.Conditions.UIConditions
         private GameObject m_TargetObject;
 
         [SerializeField]
-        private bool m_RequireExactTarget = true;
+        private ClickHandler m_ClickHandler = new ClickHandler();
 
-        [SerializeField]
-        private int m_RequiredClickCount = 1;
-
-        [SerializeField]
-        private float m_ClickTimeWindow = 1f; // Click time window
-
-        private int m_CurrentClickCount;
-        private float m_LastClickTime;
-        private bool m_IsSatisfied;
-
-        // Track listeners we added
-        private Button m_TrackedButton;
-        private EventTrigger.Entry m_TrackedEventTriggerEntry;
+        [NonSerialized]
+        private bool m_EventsSetup = false;
 
         public GameObject TargetObject
         {
@@ -39,23 +26,23 @@ namespace GameGuide.Conditions.UIConditions
 
         public bool RequireExactTarget
         {
-            get => m_RequireExactTarget;
-            set => m_RequireExactTarget = value;
+            get => m_ClickHandler.RequireExactTarget;
+            set => m_ClickHandler.RequireExactTarget = value;
         }
 
         public int RequiredClickCount
         {
-            get => m_RequiredClickCount;
-            set => m_RequiredClickCount = value;
+            get => m_ClickHandler.RequiredClickCount;
+            set => m_ClickHandler.RequiredClickCount = value;
         }
 
         public float ClickTimeWindow
         {
-            get => m_ClickTimeWindow;
-            set => m_ClickTimeWindow = value;
+            get => m_ClickHandler.ClickTimeWindow;
+            set => m_ClickHandler.ClickTimeWindow = value;
         }
 
-        public UIClickCondition() : base()
+        private UIClickCondition()
         {
         }
 
@@ -63,141 +50,43 @@ namespace GameGuide.Conditions.UIConditions
             : base($"Click_{target?.name}_{clickCount}", $"Click {target?.name} {clickCount} Times")
         {
             m_TargetObject = target;
-            m_RequiredClickCount = clickCount;
-            m_RequireExactTarget = exactTarget;
+            m_ClickHandler = new ClickHandler
+            {
+                RequiredClickCount = clickCount,
+                RequireExactTarget = exactTarget
+            };
+            SetupClickHandler();
         }
 
         public override bool IsSatisfied()
         {
-            return m_IsSatisfied;
+            return m_ClickHandler.IsSatisfied;
+        }
+
+        private void SetupClickHandler()
+        {
+            if (m_EventsSetup) return;  // Prevent duplicate subscriptions
+            
+            m_ClickHandler.OnClickSatisfied += () => { TriggerConditionChanged(); };
+            m_EventsSetup = true;
         }
 
         protected override void OnStartListening()
         {
             if (m_TargetObject == null) return;
 
-            // Reset state
-            m_CurrentClickCount = 0;
-            m_IsSatisfied = false;
+            // Ensure event handler is set up (in case of deserialization)
+            SetupClickHandler();
 
-            // Add event listeners
-            AddClickListeners();
+            // Reset state and attach listeners using ClickHandler
+            m_ClickHandler.Reset();
+            m_ClickHandler.AttachListeners(m_TargetObject);
         }
 
         protected override void OnStopListening()
         {
-            // Remove event listeners
-            RemoveClickListeners();
-        }
-
-        private void AddClickListeners()
-        {
-            if (m_TargetObject == null) return;
-
-            var button = m_TargetObject.GetComponent<Button>();
-            var eventTrigger = m_TargetObject.GetComponent<EventTrigger>();
-
-            if (button != null)
-            {
-                // Prefer Button component for better performance
-                m_TrackedButton = button;
-                button.onClick.AddListener(OnTargetClicked);
-            }
-            else if (eventTrigger != null)
-            {
-                // Use existing EventTrigger
-                AddEventTriggerEntry(eventTrigger);
-            }
-            else
-            {
-                // Create new EventTrigger
-                eventTrigger = m_TargetObject.AddComponent<EventTrigger>();
-                AddEventTriggerEntry(eventTrigger);
-            }
-        }
-
-        private void AddEventTriggerEntry(EventTrigger eventTrigger)
-        {
-            m_TrackedEventTriggerEntry = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerClick
-            };
-            m_TrackedEventTriggerEntry.callback.AddListener(OnPointerClick);
-            eventTrigger.triggers.Add(m_TrackedEventTriggerEntry);
-        }
-
-        private void RemoveClickListeners()
-        {
-            if (m_TargetObject == null) return;
-
-            // Remove Button listener
-            if (m_TrackedButton != null)
-            {
-                m_TrackedButton.onClick.RemoveListener(OnTargetClicked);
-                m_TrackedButton = null;
-            }
-
-            // Remove EventTrigger listener
-            if (m_TrackedEventTriggerEntry != null)
-            {
-                var eventTrigger = m_TargetObject.GetComponent<EventTrigger>();
-                if (eventTrigger != null)
-                {
-                    eventTrigger.triggers.Remove(m_TrackedEventTriggerEntry);
-                }
-
-                m_TrackedEventTriggerEntry = null;
-            }
-        }
-
-        private void OnTargetClicked()
-        {
-            HandleClick(m_TargetObject);
-        }
-
-        private void OnPointerClick(BaseEventData data)
-        {
-            var eventData = data as PointerEventData;
-            if (eventData != null)
-            {
-                HandleClick(eventData.pointerPress);
-            }
-        }
-
-        private void HandleClick(GameObject clickedObject)
-        {
-            // Check if target object was clicked
-            bool isTargetClicked = false;
-
-            if (m_RequireExactTarget)
-            {
-                isTargetClicked = clickedObject == m_TargetObject;
-            }
-            else
-            {
-                // Check if it's a child object of the target
-                isTargetClicked = clickedObject == m_TargetObject ||
-                                  clickedObject.transform.IsChildOf(m_TargetObject.transform);
-            }
-
-            if (!isTargetClicked) return;
-
-            // Check time window
-            float currentTime = Time.time;
-            if (currentTime - m_LastClickTime > m_ClickTimeWindow)
-            {
-                m_CurrentClickCount = 0; // Reset count
-            }
-
-            m_CurrentClickCount++;
-            m_LastClickTime = currentTime;
-
-            // Check if click count requirement is met
-            if (m_CurrentClickCount >= m_RequiredClickCount)
-            {
-                m_IsSatisfied = true;
-                TriggerConditionChanged();
-            }
+            // Remove event listeners using ClickHandler
+            m_ClickHandler.DetachListeners();
         }
 
         /// <summary>
@@ -205,19 +94,17 @@ namespace GameGuide.Conditions.UIConditions
         /// </summary>
         public void Reset()
         {
-            m_CurrentClickCount = 0;
-            m_IsSatisfied = false;
-            m_TrackedButton = null;
-            m_TrackedEventTriggerEntry = null;
+            m_ClickHandler.Reset();
             TriggerConditionChanged();
         }
 
         protected override string GetDefaultDescription()
         {
             if (m_TargetObject == null)
-                return $"Click condition: {m_RequiredClickCount} clicks";
+                return $"Click condition: {RequiredClickCount} clicks";
 
-            return $"Click {m_TargetObject.name} {m_RequiredClickCount} times";
+            return $"Click {m_TargetObject.name} {RequiredClickCount} times" +
+                   $" (Current: {m_ClickHandler.CurrentClickCount}/{RequiredClickCount})";
         }
     }
 }
