@@ -11,6 +11,103 @@ namespace UIExt.Effect
     [RequireComponent(typeof(UIEventMask))]
     public class LockEffect : EffectBase
     {
+        [Serializable]
+        private class LockFocus
+        {
+            [SerializeField]
+            [Tooltip("the Rect is the root of the focus effect")]
+            private RectTransform m_FocusRect;
+
+            [SerializeField]
+            [Tooltip("Offset for the focus rect (x,y: center offset, z,w: width/height increase)")]
+            private Vector4 m_FocusOffset = new Vector4(0, 0, 0, 0);
+
+            private IAnimation m_FocusAnimation;
+
+            private bool m_Initialized;
+
+            public bool IsValid => null != m_FocusRect;
+
+            public Vector4 FocusOffset
+            {
+                get => m_FocusOffset;
+                set => m_FocusOffset = value;
+            }
+
+            public void Initialize()
+            {
+                if (m_Initialized)
+                    return;
+
+                ForceInitialize();
+
+                m_Initialized = true;
+            }
+
+            public void ForceInitialize()
+            {
+                if (null != m_FocusRect)
+                {
+                    m_FocusAnimation = m_FocusRect.GetComponent<IAnimation>();
+
+                    if (null != m_FocusAnimation)
+                        m_FocusAnimation.Initialize();
+                }
+            }
+
+            public void Focus(RectTransform target)
+            {
+                if (null == target)
+                    return;
+
+                if (IsValid)
+                {
+                    Initialize();
+
+                    m_FocusRect.gameObject.SetActive(true);
+
+                    Utility.UIRect.SetTargetRectBySource(m_FocusRect, target, m_FocusOffset);
+
+                    if (null != m_FocusAnimation)
+                    {
+                        m_FocusAnimation.Play();
+                    }
+                }
+            }
+
+            public void Update(RectTransform target)
+            {
+                if (null == target)
+                    return;
+
+                if (IsValid)
+                {
+                    Utility.UIRect.SetTargetRectBySource(m_FocusRect, target, m_FocusOffset);
+                }
+            }
+
+            public void Stop()
+            {
+                if (null != m_FocusAnimation)
+                    m_FocusAnimation.Stop();
+
+                if (null != m_FocusRect)
+                    m_FocusRect.gameObject.SetActive(false);
+            }
+
+            public void Pause()
+            {
+                if (null != m_FocusAnimation)
+                    m_FocusAnimation.Pause();
+            }
+
+            public void Resume()
+            {
+                if (null != m_FocusAnimation)
+                    m_FocusAnimation.Resume();
+            }
+        }
+
         [Header("Lock Settings")]
         [SerializeField]
         [Tooltip("Mask type for the lock effect")]
@@ -20,16 +117,8 @@ namespace UIExt.Effect
         [Tooltip("Whether the target can be clicked")]
         private bool m_AllowClick = true;
 
-        [Header("Focus Frame")]
         [SerializeField]
-        [Tooltip("Focus frame to highlight the target")]
-        private RectTransform m_FocusFrame;
-
-        [SerializeField]
-        [Tooltip("Offset for the focus frame (x,y: center offset, z,w: width/height increase)")]
-        private Vector4 m_FocusOffset = new Vector4(0, 0, 0, 0);
-
-        private IAnimation m_FocusAnimation;
+        private LockFocus m_LockFocus = new();
 
         private UIEventMask m_EventMask;
 
@@ -43,18 +132,14 @@ namespace UIExt.Effect
             }
         }
 
-        public RectTransform FocusFrame
-        {
-            get
-            {
-                if (null == m_FocusFrame)
-                {
-                    m_FocusFrame = m_Target.GetComponent<RectTransform>();
-                }
+        #region Unity Functions
 
-                return m_FocusFrame;
-            }
+        private void Awake()
+        {
+            m_LockFocus.Initialize();
         }
+
+        #endregion
 
         /// <summary>
         /// Set mask type
@@ -74,26 +159,6 @@ namespace UIExt.Effect
             return this;
         }
 
-        /// <summary>
-        /// Set focus frame
-        /// </summary>
-        public LockEffect SetFocusFrame(RectTransform focusFrame)
-        {
-            m_FocusFrame = focusFrame;
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus frame with offset
-        /// </summary>
-        /// <param name="focusFrame">Focus frame RectTransform</param>
-        /// <param name="offset">Offset (x,y: center offset, z,w: width/height increase)</param>
-        public LockEffect SetFocusFrame(RectTransform focusFrame, Vector4 offset)
-        {
-            m_FocusFrame = focusFrame;
-            m_FocusOffset = offset;
-            return this;
-        }
 
         /// <summary>
         /// Set focus frame offset
@@ -102,7 +167,7 @@ namespace UIExt.Effect
         /// <param name="sizeIncrease">Size increase (width, height)</param>
         public LockEffect SetFocusFrameOffset(Vector2 centerOffset, Vector2 sizeIncrease)
         {
-            m_FocusOffset = new Vector4(centerOffset.x, centerOffset.y, sizeIncrease.x, sizeIncrease.y);
+            m_LockFocus.FocusOffset = new Vector4(centerOffset.x, centerOffset.y, sizeIncrease.x, sizeIncrease.y);
             return this;
         }
 
@@ -116,16 +181,7 @@ namespace UIExt.Effect
         public LockEffect SetFocusFrameOffset(float offsetX, float offsetY, float widthIncrease,
             float heightIncrease)
         {
-            m_FocusOffset = new Vector4(offsetX, offsetY, widthIncrease, heightIncrease);
-            return this;
-        }
-
-        /// <summary>
-        /// Set focus animation
-        /// </summary>
-        public LockEffect SetFocusAnimation(IAnimation imageAnimation)
-        {
-            m_FocusAnimation = imageAnimation;
+            m_LockFocus.FocusOffset = new Vector4(offsetX, offsetY, widthIncrease, heightIncrease);
             return this;
         }
 
@@ -133,22 +189,21 @@ namespace UIExt.Effect
         {
             base.OnPlay();
 
+            if (null == m_Target)
+            {
+                Debug.LogWarning("Target is null in LockEffect.OnPlay", this);
+                return;
+            }
+
             // Setup mask
             EventMask.SetUIMaskTarget(m_Target, m_MaskType);
             EventMask.PassThroughStyle = m_AllowClick
                 ? UIEventPassThrough.PassThroughType.PassAtTargetRect
                 : UIEventPassThrough.PassThroughType.PassNever;
 
-            // Setup focus frame
-            FocusFrame.gameObject.SetActive(true);
-            Utility.UIRect.SetTargetRectBySource(FocusFrame, m_Target, m_FocusOffset);
-
-            // Play animation if exists
-            if (m_FocusAnimation != null)
-            {
-                m_FocusAnimation.Initialize();
-                m_FocusAnimation.Play();
-            }
+            // Setup focus
+            if (m_LockFocus.IsValid)
+                m_LockFocus.Focus(m_Target);
 
             gameObject.SetActive(true);
         }
@@ -159,15 +214,8 @@ namespace UIExt.Effect
 
             EventMask.PassThroughClickCallback = null;
 
-            if (m_FocusFrame != null)
-            {
-                if (m_FocusAnimation != null)
-                {
-                    m_FocusAnimation.Stop();
-                }
-
-                m_FocusFrame.gameObject.SetActive(false);
-            }
+            if (m_LockFocus.IsValid)
+                m_LockFocus.Stop();
 
             gameObject.SetActive(false);
         }
@@ -176,20 +224,16 @@ namespace UIExt.Effect
         {
             base.OnPause();
 
-            if (m_FocusAnimation != null && m_FocusAnimation.IsPlaying)
-            {
-                m_FocusAnimation.Pause();
-            }
+            if (m_LockFocus.IsValid)
+                m_LockFocus.Pause();
         }
 
         protected override void OnResume()
         {
             base.OnResume();
 
-            if (m_FocusAnimation != null)
-            {
-                m_FocusAnimation.Resume();
-            }
+            if (m_LockFocus.IsValid)
+                m_LockFocus.Resume();
         }
 
         private void Update()
@@ -197,19 +241,8 @@ namespace UIExt.Effect
             if (!m_IsPlaying || m_IsPaused)
                 return;
 
-            // Update focus frame position if target moves
-            if (m_FocusFrame != null && m_Target != null)
-            {
-                UpdateFocusFrame();
-            }
-        }
-
-        private void UpdateFocusFrame()
-        {
-            if (Utility.UIRect.AreRectEquals(m_FocusFrame, m_Target))
-                return;
-
-            Utility.UIRect.SetTargetRectBySource(m_FocusFrame, m_Target, m_FocusOffset);
+            if (m_LockFocus.IsValid)
+                m_LockFocus.Update(m_Target);
         }
     }
 }

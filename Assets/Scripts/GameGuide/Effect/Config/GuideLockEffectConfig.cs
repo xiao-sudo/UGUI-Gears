@@ -9,10 +9,9 @@ namespace GameGuide.Effect.Config
     {
         public UIEventMask.MaskType MaskType { get; set; }
         public RectTransform Target { get; set; }
-        public RectTransform FocusFrame { get; set; }
-        
+
         public string TargetPath { get; set; }
-        
+
         public Func<RectTransform> RootFinder { get; set; }
 
         public void Apply(IGuideEffect guideEffect)
@@ -25,7 +24,6 @@ namespace GameGuide.Effect.Config
         {
             guideLockEffect.Target = Target;
             guideLockEffect.SetMaskType(MaskType);
-            guideLockEffect.SetFocusFrame(FocusFrame);
             guideLockEffect.SetTargetPath(TargetPath);
             guideLockEffect.SetSearchRootFinder(RootFinder);
         }
