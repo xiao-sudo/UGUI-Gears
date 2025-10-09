@@ -30,6 +30,8 @@ namespace UIExt.Effect
 
         public bool IsPlaying => m_IsPlaying;
 
+        protected virtual bool NeedTarget => true;
+
         /// <summary>
         /// Set a dynamic target finder function
         /// </summary>
@@ -51,7 +53,7 @@ namespace UIExt.Effect
         public virtual void Play()
         {
             // Try to resolve target if not set
-            if (m_Target == null)
+            if (NeedTarget && m_Target == null)
             {
                 // First try the target finder delegate
                 if (m_TargetFinder != null)
@@ -151,4 +153,3 @@ namespace UIExt.Effect
         }
     }
 }
-

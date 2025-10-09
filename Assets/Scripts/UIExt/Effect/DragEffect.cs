@@ -97,6 +97,8 @@ namespace UIExt.Effect
         private Action m_OnDragStart;
         private Action m_OnDragEnd;
 
+        protected override bool NeedTarget => false;
+
         private Canvas RootCanvas
         {
             get
@@ -231,14 +233,20 @@ namespace UIExt.Effect
             // Setup drag target
             if (m_Target != null)
             {
-                var startScreen = GetStartScreenPos();
-                Vector2 localPoint;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    RootCanvas.transform as RectTransform,
-                    startScreen,
-                    RootCanvas.worldCamera,
-                    out localPoint);
-                m_Target.localPosition = localPoint;
+                SetLocalPositionFromScreenPoint(m_Target, GetStartScreenPos());
+            }
+
+            // Ensure Image component for raycasting
+            if (m_DragImage == null)
+            {
+                m_DragImage = GetComponent<Image>();
+                if (m_DragImage == null)
+                {
+                    m_DragImage = gameObject.AddComponent<Image>();
+                    m_DragImage.color = new Color(0, 0, 0, 0.01f); // Nearly transparent
+                }
+
+                SetLocalPositionFromScreenPoint(m_DragImage.rectTransform, GetStartScreenPos());
             }
 
             // Setup hint
@@ -251,17 +259,6 @@ namespace UIExt.Effect
                 m_HintEndPos = endScreen;
                 m_HintTimer = 0f;
                 m_HintPlaying = true;
-            }
-
-            // Ensure Image component for raycasting
-            if (m_DragImage == null)
-            {
-                m_DragImage = GetComponent<Image>();
-                if (m_DragImage == null)
-                {
-                    m_DragImage = gameObject.AddComponent<Image>();
-                    m_DragImage.color = new Color(0, 0, 0, 0.01f); // Nearly transparent
-                }
             }
         }
 
@@ -332,10 +329,8 @@ namespace UIExt.Effect
                 screenPos = m_HintStartPos;
             }
 
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(RootCanvas.transform as RectTransform, screenPos,
-                RootCanvas.worldCamera, out var localPoint);
-
-            m_DragHint.localPosition = localPoint;
+            // Convert screen position to local position relative to m_DragHint's parent
+            SetLocalPositionFromScreenPoint(m_DragHint, screenPos);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -361,14 +356,7 @@ namespace UIExt.Effect
 
             if (m_Target != null)
             {
-                Vector2 localPoint;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    RootCanvas.transform as RectTransform,
-                    eventData.position,
-                    RootCanvas.worldCamera,
-                    out localPoint);
-
-                m_Target.localPosition = localPoint;
+                SetLocalPositionFromScreenPoint(m_Target, eventData.position);
             }
 
             m_OnDrag?.Invoke(eventData.position);
@@ -389,14 +377,7 @@ namespace UIExt.Effect
                 // Drag completed successfully
                 if (m_Target != null)
                 {
-                    var endScreen = GetEndScreenPos();
-                    Vector2 localPoint;
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        RootCanvas.transform as RectTransform,
-                        endScreen,
-                        RootCanvas.worldCamera,
-                        out localPoint);
-                    m_Target.localPosition = localPoint;
+                    SetLocalPositionFromScreenPoint(m_Target, GetEndScreenPos());
                 }
 
                 m_OnDragEnd?.Invoke();
@@ -407,14 +388,7 @@ namespace UIExt.Effect
                 // Drag failed, reset to current start screen position
                 if (m_Target != null)
                 {
-                    var startScreen = GetStartScreenPos();
-                    Vector2 localPoint;
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        RootCanvas.transform as RectTransform,
-                        startScreen,
-                        RootCanvas.worldCamera,
-                        out localPoint);
-                    m_Target.localPosition = localPoint;
+                    SetLocalPositionFromScreenPoint(m_Target, GetStartScreenPos());
                 }
 
                 // Restart hint animation
@@ -435,6 +409,24 @@ namespace UIExt.Effect
         private Vector2 GetEndScreenPos()
         {
             return m_EndEndpoint.GetScreenPosition(RootCanvas);
+        }
+
+        /// <summary>
+        /// Helper method to set RectTransform's local position from screen position.
+        /// Automatically converts screen position to local position relative to the target's parent.
+        /// </summary>
+        private void SetLocalPositionFromScreenPoint(RectTransform target, Vector2 screenPos)
+        {
+            if (target == null)
+                return;
+
+            var parent = target.parent as RectTransform;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                parent,
+                screenPos,
+                RootCanvas.worldCamera,
+                out var localPoint);
+            target.localPosition = localPoint;
         }
     }
 }
