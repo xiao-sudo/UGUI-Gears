@@ -14,20 +14,15 @@ namespace GameGuide.Effect.Config
 
         public float HintLoopDelay { get; set; }
 
-        public RectTransform DragHint { get; set; }
-
         public RectTransform Start { get; set; }
 
         public RectTransform End { get; set; }
 
-        public RectTransform DragTarget { get; set; }
 
         public void Apply(GuideDragEffect dragEffect)
         {
-            dragEffect.Target = DragTarget;
             dragEffect.OnComplete(OnDragComplete);
             dragEffect.SetHintAnimation(true, HintDuration, HintLoopDelay);
-            dragEffect.SetDragHint(DragHint);
             dragEffect.SetPositions(Start, End);
             dragEffect.SetCompleteThreshold(CompleteThreshold);
         }
