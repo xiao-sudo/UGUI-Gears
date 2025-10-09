@@ -1,5 +1,5 @@
 using System;
-using GameGuide.Core.Effect;
+using GameGuide.Effect;
 using UnityEngine;
 
 namespace GameGuide.Core.Config

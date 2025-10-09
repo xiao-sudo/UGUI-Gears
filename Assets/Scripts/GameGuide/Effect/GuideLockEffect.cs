@@ -1,9 +1,10 @@
 using System;
+using GameGuide.Core;
 using UIExt.Base;
 using UIExt.Effect;
 using UnityEngine;
 
-namespace GameGuide.Core.Effect
+namespace GameGuide.Effect
 {
     /// <summary>
     /// Guide lock effect - highlights and locks a UI element with guide-specific events

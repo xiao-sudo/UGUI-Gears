@@ -1,5 +1,5 @@
 using System;
-using GameGuide.Core.Effect;
+using GameGuide.Effect;
 using UIExt.Base;
 using UnityEngine;
 

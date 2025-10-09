@@ -1,7 +1,8 @@
 using System;
+using GameGuide.Core;
 using UIExt.Effect;
 
-namespace GameGuide.Core.Effect
+namespace GameGuide.Effect
 {
     /// <summary>
     /// Guide drag effect - guides user to drag an element with guide-specific events
