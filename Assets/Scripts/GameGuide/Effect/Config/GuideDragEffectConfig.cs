@@ -1,8 +1,8 @@
 using System;
-using GameGuide.Effect;
+using GameGuide.Core;
 using UnityEngine;
 
-namespace GameGuide.Core.Config
+namespace GameGuide.Effect.Config
 {
     public class GuideDragEffectConfig : IGuideEffectConfig
     {

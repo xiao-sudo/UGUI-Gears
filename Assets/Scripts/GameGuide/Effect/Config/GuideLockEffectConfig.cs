@@ -1,9 +1,9 @@
 using System;
-using GameGuide.Effect;
+using GameGuide.Core;
 using UIExt.Base;
 using UnityEngine;
 
-namespace GameGuide.Core.Config
+namespace GameGuide.Effect.Config
 {
     public class GuideLockEffectConfig : IGuideEffectConfig
     {

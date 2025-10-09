@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using GameGuide.Conditions;
-using GameGuide.Core.Config;
+using GameGuide.Effect.Config;
 
 namespace GameGuide.Core
 {

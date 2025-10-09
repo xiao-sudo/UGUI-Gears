@@ -1,4 +1,6 @@
-namespace GameGuide.Core.Config
+using GameGuide.Core;
+
+namespace GameGuide.Effect.Config
 {
     public interface IGuideEffectConfig
     {
