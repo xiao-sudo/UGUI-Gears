@@ -62,12 +62,176 @@ namespace UIExt.Effect
             }
         }
 
+        private class DragValidator
+        {
+            private readonly DragEffect m_Owner;
+
+            // Settings
+            private float m_Timeout;
+            private Func<Vector2, bool> m_ValidationFunc;
+            private Action m_OnTimeout;
+
+            // State
+            private bool m_IsWaiting;
+            private Coroutine m_Coroutine;
+
+            public bool IsWaiting => m_IsWaiting;
+
+            public DragValidator(DragEffect owner)
+            {
+                m_Owner = owner;
+            }
+
+            public void SetTimeout(float seconds)
+            {
+                m_Timeout = Mathf.Max(0, seconds);
+            }
+
+            public void SetValidationFunc(Func<Vector2, bool> func)
+            {
+                m_ValidationFunc = func;
+            }
+
+            public void SetTimeoutCallback(Action callback)
+            {
+                m_OnTimeout = callback;
+            }
+
+            public bool HasValidation()
+            {
+                return m_ValidationFunc != null;
+            }
+
+            public void StartValidation(Vector2 pos)
+            {
+                m_IsWaiting = true;
+            }
+
+            public void SetCoroutine(Coroutine coroutine)
+            {
+                m_Coroutine = coroutine;
+            }
+
+            public System.Collections.IEnumerator ValidationCoroutine(Vector2 dragEndPos)
+            {
+                float timeoutTimer = 0f;
+
+                // Wait one frame to handle execution order issues
+                yield return null;
+                timeoutTimer += Time.deltaTime;
+
+                if (m_Timeout > 0 && timeoutTimer >= m_Timeout)
+                {
+                    HandleTimeout();
+                    yield break;
+                }
+
+                // Call validation function
+                bool isValid = false;
+                try
+                {
+                    isValid = m_ValidationFunc.Invoke(dragEndPos);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[DragEffect] Validation function threw exception: {e.Message}");
+                    isValid = false;
+                }
+
+                // Handle result
+                if (isValid)
+                {
+                    ConfirmComplete();
+                }
+                else
+                {
+                    ConfirmFailed();
+                }
+            }
+
+            public void ConfirmComplete()
+            {
+                if (!m_IsWaiting)
+                    return;
+
+                m_IsWaiting = false;
+
+                if (m_Coroutine != null)
+                {
+                    m_Owner.StopCoroutine(m_Coroutine);
+                    m_Coroutine = null;
+                }
+
+                m_Owner.InvokeComplete();
+            }
+
+            public void ConfirmFailed()
+            {
+                if (!m_IsWaiting)
+                    return;
+
+                m_IsWaiting = false;
+
+                if (m_Coroutine != null)
+                {
+                    m_Owner.StopCoroutine(m_Coroutine);
+                    m_Coroutine = null;
+                }
+
+                m_Owner.HandleDragFailed();
+            }
+
+            public void Cancel()
+            {
+                if (!m_IsWaiting)
+                    return;
+
+                m_IsWaiting = false;
+
+                if (m_Coroutine != null)
+                {
+                    m_Owner.StopCoroutine(m_Coroutine);
+                    m_Coroutine = null;
+                }
+
+                m_Owner.HandleDragFailed();
+            }
+
+            public void Cleanup()
+            {
+                if (m_Coroutine != null)
+                {
+                    m_Owner.StopCoroutine(m_Coroutine);
+                    m_Coroutine = null;
+                }
+
+                m_IsWaiting = false;
+            }
+
+            private void HandleTimeout()
+            {
+                m_IsWaiting = false;
+                m_Coroutine = null;
+
+                m_OnTimeout?.Invoke();
+                m_Owner.HandleDragFailed();
+            }
+        }
+
         private DragEndpoint m_StartEndpoint;
         private DragEndpoint m_EndEndpoint;
 
         [SerializeField]
         [Tooltip("Drag hint object (like a hand icon)")]
         private RectTransform m_DragHint;
+
+        [SerializeField]
+        [Tooltip("Static indicator at start position")]
+        private RectTransform m_FromHint;
+
+        [SerializeField]
+        [Tooltip("Static indicator at end position")]
+        private RectTransform m_ToHint;
 
         [SerializeField]
         [Tooltip("Auto play hint animation")]
@@ -87,7 +251,7 @@ namespace UIExt.Effect
 
         private bool m_IsDragging;
         private float m_HintTimer;
-        private bool m_HintPlaying;
+        private bool m_DragHintPlaying;
         private Vector3 m_HintStartPos;
         private Vector3 m_HintEndPos;
 
@@ -97,7 +261,27 @@ namespace UIExt.Effect
         private Action m_OnDragStart;
         private Action m_OnDragEnd;
 
+        private DragValidator m_Validator;
+
         protected override bool NeedTarget => false;
+
+        /// <summary>
+        /// Is currently waiting for validation to complete
+        /// </summary>
+        public bool IsWaitingValidation => m_Validator?.IsWaiting ?? false;
+
+        private DragValidator Validator
+        {
+            get
+            {
+                if (m_Validator == null)
+                {
+                    m_Validator = new DragValidator(this);
+                }
+
+                return m_Validator;
+            }
+        }
 
         private Canvas RootCanvas
         {
@@ -112,6 +296,24 @@ namespace UIExt.Effect
 
                 return m_Canvas;
             }
+        }
+
+        /// <summary>
+        /// Set from hint indicator
+        /// </summary>
+        public DragEffect SetFromHint(RectTransform hint)
+        {
+            m_FromHint = hint;
+            return this;
+        }
+
+        /// <summary>
+        /// Set to hint indicator
+        /// </summary>
+        public DragEffect SetToHint(RectTransform hint)
+        {
+            m_ToHint = hint;
+            return this;
         }
 
         /// <summary>
@@ -214,6 +416,36 @@ namespace UIExt.Effect
             return this;
         }
 
+        /// <summary>
+        /// Set validation timeout. If validation doesn't complete within this time, it will auto-fail.
+        /// Set to 0 to disable timeout.
+        /// </summary>
+        public DragEffect SetValidationTimeout(float seconds)
+        {
+            Validator.SetTimeout(seconds);
+            return this;
+        }
+
+        /// <summary>
+        /// Set validation callback. The function will be called to validate the drag end position.
+        /// Return true for success, false for failure.
+        /// The validation will be executed with a one-frame delay by default to handle execution order issues.
+        /// </summary>
+        public DragEffect OnDragEndValidation(Func<Vector2, bool> validationFunc)
+        {
+            Validator.SetValidationFunc(validationFunc);
+            return this;
+        }
+
+        /// <summary>
+        /// Set callback for when validation times out
+        /// </summary>
+        public DragEffect OnValidationTimeout(Action onTimeout)
+        {
+            Validator.SetTimeoutCallback(onTimeout);
+            return this;
+        }
+
         protected override void OnPlay()
         {
             base.OnPlay();
@@ -252,13 +484,26 @@ namespace UIExt.Effect
             // Setup hint
             if (m_DragHint != null && m_AutoPlayHint)
             {
-                m_DragHint.gameObject.SetActive(true);
+                // m_DragHint.gameObject.SetActive(true);
+                ShowHint(m_DragHint);
                 var startScreen = GetStartScreenPos();
                 var endScreen = GetEndScreenPos();
                 m_HintStartPos = startScreen;
                 m_HintEndPos = endScreen;
                 m_HintTimer = 0f;
-                m_HintPlaying = true;
+                m_DragHintPlaying = true;
+            }
+
+            if (null != m_FromHint)
+            {
+                SetLocalPositionFromScreenPoint(m_FromHint, GetStartScreenPos());
+                ShowHint(m_FromHint);
+            }
+
+            if (null != m_ToHint)
+            {
+                SetLocalPositionFromScreenPoint(m_ToHint, GetEndScreenPos());
+                ShowHint(m_ToHint);
             }
         }
 
@@ -266,13 +511,15 @@ namespace UIExt.Effect
         {
             base.OnStop();
 
-            if (m_DragHint != null)
-            {
-                m_DragHint.gameObject.SetActive(false);
-            }
+            HideHint(m_DragHint);
+            HideHint(m_FromHint);
+            HideHint(m_ToHint);
 
-            m_HintPlaying = false;
+            m_DragHintPlaying = false;
             m_IsDragging = false;
+
+            // Clean up validation state
+            Validator.Cleanup();
 
             gameObject.SetActive(false);
         }
@@ -280,7 +527,7 @@ namespace UIExt.Effect
         protected override void OnPause()
         {
             base.OnPause();
-            m_HintPlaying = false;
+            m_DragHintPlaying = false;
         }
 
         protected override void OnResume()
@@ -288,7 +535,7 @@ namespace UIExt.Effect
             base.OnResume();
             if (m_AutoPlayHint && m_DragHint != null)
             {
-                m_HintPlaying = true;
+                m_DragHintPlaying = true;
             }
         }
 
@@ -297,7 +544,9 @@ namespace UIExt.Effect
             if (!m_IsPlaying || m_IsPaused)
                 return;
 
-            if (m_HintPlaying && !m_IsDragging)
+            UpdateFromAndToHints();
+
+            if (m_DragHintPlaying && !m_IsDragging)
             {
                 // Refresh hint endpoints for follow/world modes
                 if (m_StartEndpoint.Type == EndpointType.FollowRect ||
@@ -306,11 +555,28 @@ namespace UIExt.Effect
                 if (m_EndEndpoint.Type == EndpointType.FollowRect || m_EndEndpoint.Type == EndpointType.WorldPosition)
                     m_HintEndPos = GetEndScreenPos();
 
-                UpdateHintAnimation();
+                UpdateDragHintAnimation();
             }
         }
 
-        private void UpdateHintAnimation()
+        private void UpdateFromAndToHints()
+        {
+            if (m_FromHint != null &&
+                (m_StartEndpoint.Type == EndpointType.FollowRect ||
+                 m_StartEndpoint.Type == EndpointType.WorldPosition))
+            {
+                SetLocalPositionFromScreenPoint(m_FromHint, GetStartScreenPos());
+            }
+
+            if (m_ToHint != null &&
+                (m_EndEndpoint.Type == EndpointType.FollowRect ||
+                 m_EndEndpoint.Type == EndpointType.WorldPosition))
+            {
+                SetLocalPositionFromScreenPoint(m_ToHint, GetEndScreenPos());
+            }
+        }
+
+        private void UpdateDragHintAnimation()
         {
             m_HintTimer += Time.deltaTime;
 
@@ -340,11 +606,9 @@ namespace UIExt.Effect
 
             m_IsDragging = true;
 
-            if (m_DragHint != null)
-            {
-                m_DragHint.gameObject.SetActive(false);
-                m_HintPlaying = false;
-            }
+            HideHint(m_FromHint);
+            HideHint(m_DragHint);
+            m_DragHintPlaying = false;
 
             m_OnDragStart?.Invoke();
         }
@@ -369,35 +633,37 @@ namespace UIExt.Effect
 
             m_IsDragging = false;
 
-            // Check if drag reached the end position
+            // Check if drag reached the end position (threshold check)
             float distance = Vector2.Distance(eventData.position, GetEndScreenPos());
 
-            if (distance <= m_CompleteThreshold)
+            if (distance > m_CompleteThreshold)
             {
-                // Drag completed successfully
-                if (m_Target != null)
-                {
-                    SetLocalPositionFromScreenPoint(m_Target, GetEndScreenPos());
-                }
+                // Distance check failed, reset immediately
+                HandleDragFailed();
+                return;
+            }
 
-                m_OnDragEnd?.Invoke();
-                InvokeComplete();
+            // Move target to end position
+            if (m_Target != null)
+            {
+                SetLocalPositionFromScreenPoint(m_Target, GetEndScreenPos());
+            }
+
+            // Trigger OnDragEnd callback
+            m_OnDragEnd?.Invoke();
+
+            // Start validation process
+            if (Validator.HasValidation())
+            {
+                // Validation mode with delay
+                Validator.StartValidation(eventData.position);
+                var coroutine = StartCoroutine(Validator.ValidationCoroutine(eventData.position));
+                Validator.SetCoroutine(coroutine);
             }
             else
             {
-                // Drag failed, reset to current start screen position
-                if (m_Target != null)
-                {
-                    SetLocalPositionFromScreenPoint(m_Target, GetStartScreenPos());
-                }
-
-                // Restart hint animation
-                if (m_AutoPlayHint && m_DragHint != null)
-                {
-                    m_DragHint.gameObject.SetActive(true);
-                    m_HintTimer = 0f;
-                    m_HintPlaying = true;
-                }
+                // No validation, complete immediately
+                InvokeComplete();
             }
         }
 
@@ -427,6 +693,65 @@ namespace UIExt.Effect
                 RootCanvas.worldCamera,
                 out var localPoint);
             target.localPosition = localPoint;
+        }
+
+        /// <summary>
+        /// Confirm that the drag was successful. Call this from external validation logic.
+        /// </summary>
+        public void ConfirmComplete()
+        {
+            Validator.ConfirmComplete();
+        }
+
+        /// <summary>
+        /// Confirm that the drag failed validation. Call this from external validation logic.
+        /// </summary>
+        public void ConfirmFailed()
+        {
+            Validator.ConfirmFailed();
+        }
+
+        /// <summary>
+        /// Cancel ongoing validation
+        /// </summary>
+        public void CancelValidation()
+        {
+            Validator.Cancel();
+        }
+
+        /// <summary>
+        /// Handle drag failed - reset to start position and restart hint
+        /// </summary>
+        internal void HandleDragFailed()
+        {
+            // Reset to start position
+            if (m_Target != null)
+            {
+                SetLocalPositionFromScreenPoint(m_Target, GetStartScreenPos());
+            }
+
+            // Restart hint animation
+            if (m_AutoPlayHint && m_DragHint != null)
+            {
+                ShowHint(m_DragHint);
+                m_HintTimer = 0f;
+                m_DragHintPlaying = true;
+            }
+
+            ShowHint(m_FromHint);
+            ShowHint(m_ToHint);
+        }
+
+        private void ShowHint(RectTransform hint)
+        {
+            if (null != hint)
+                hint.gameObject.SetActive(true);
+        }
+
+        private void HideHint(RectTransform hint)
+        {
+            if (null != hint)
+                hint.gameObject.SetActive(false);
         }
     }
 }
