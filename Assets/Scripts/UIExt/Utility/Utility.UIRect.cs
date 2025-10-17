@@ -70,13 +70,12 @@ namespace UIExt.Utility
             target.GetWorldCorners(CACHE_CORNERS);
 
             var lbPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[LEFT_BOTTOM_CORNER_INDEX]);
-            var ltPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[LEFT_TOP_CORNER_INDEX]);
             var rtPosition = RectTransformUtility.WorldToScreenPoint(uiCamera, CACHE_CORNERS[RIGHT_TOP_CORNER_INDEX]);
 
             var xMin = lbPosition.x;
             var yMin = lbPosition.y;
-            var width = Vector3.Distance(ltPosition, rtPosition);
-            var height = Vector3.Distance(ltPosition, lbPosition);
+            var width = rtPosition.x - lbPosition.x;
+            var height = rtPosition.y - lbPosition.y;
 
             return new Rect(xMin, yMin, width, height);
         }
@@ -116,7 +115,6 @@ namespace UIExt.Utility
             source.GetWorldCorners(CACHE_CORNERS);
 
             var lbPosition = CACHE_CORNERS[LEFT_BOTTOM_CORNER_INDEX];
-            var ltPosition = CACHE_CORNERS[LEFT_TOP_CORNER_INDEX];
             var rtPosition = CACHE_CORNERS[RIGHT_TOP_CORNER_INDEX];
 
             var targetParent = target.parent as RectTransform;
@@ -128,11 +126,10 @@ namespace UIExt.Utility
             }
 
             var localLbPos = targetParent.InverseTransformPoint(lbPosition);
-            var localLtPos = targetParent.InverseTransformPoint(ltPosition);
             var localRtPos = targetParent.InverseTransformPoint(rtPosition);
 
-            var width = localRtPos.x - localLtPos.x;
-            var height = localLtPos.y - localLbPos.y;
+            var width = localRtPos.x - localLbPos.x;
+            var height = localRtPos.y - localLbPos.y;
             Vector2 center = (localLbPos + localRtPos) * 0.5f;
 
             target.anchorMin = new Vector2(0.5f, 0.5f);
